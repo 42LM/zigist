@@ -1,6 +1,7 @@
 const std = @import("std");
 const http = std.http;
 const Client = http.Client;
+const Allocator = std.mem.Allocator;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const calloc = gpa.allocator();
@@ -40,19 +41,11 @@ pub fn main() !void {
     // send the request and headers to the server.
     try req.start();
 
-    // TODO: read from file
-    const payload =
-        \\{
-        \\ "description":"ZIGZIG",
-        \\ "files":
-        \\      {
-        \\      "test.md":
-        \\          {
-        \\              "content":"cron worked"
-        \\          }
-        \\      }
-        \\ }
-    ;
+    // build the payload with the help of a config.json file
+    const config = try readConfig(calloc, "config.json");
+    var payload = std.fmt.allocPrint(calloc, "{{\"description\":\"ZIGZIG\",\"files\":{{\"test.md\":{{\"content\":\"{s}\"}}}}", .{config.content}) catch "format failed";
+    defer calloc.free(payload);
+
     try req.writer().writeAll(payload);
     try req.finish();
 
@@ -61,3 +54,15 @@ pub fn main() !void {
 
     std.debug.print("gist updated successfully: {u}", .{req.response.status});
 }
+
+fn readConfig(allocator: Allocator, path: []const u8) !Config {
+    const data = try std.fs.cwd().readFileAlloc(allocator, path, 512);
+    defer allocator.free(data);
+    return try std.json.parseFromSlice(Config, allocator, data, .{});
+}
+
+const Config = struct {
+    content: []const u8,
+};
+
+// TODO: test
