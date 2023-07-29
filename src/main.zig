@@ -1,6 +1,7 @@
 const std = @import("std");
 const http = std.http;
 const Client = http.Client;
+const time = std.time;
 const Allocator = std.mem.Allocator;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -43,7 +44,8 @@ pub fn main() !void {
 
     // build the payload with the help of a config.json file
     const config = try readConfig(calloc, "config.json");
-    var payload = std.fmt.allocPrint(calloc, "{{\"description\":\"ZIGZIG\",\"files\":{{\"test.md\":{{\"content\":\"{s}\"}}}}", .{config.content}) catch "format failed";
+    // TODO: convert epoch unix timestamp to datetime
+    var payload = std.fmt.allocPrint(calloc, "{{\"description\":\"ZIGZIG\",\"files\":{{\"NEWS.md\":{{\"content\":\"{s}\\n> unix ts {d}\"}}}}", .{ config.content, time.timestamp() }) catch "format failed";
     defer calloc.free(payload);
 
     try req.writer().writeAll(payload);
