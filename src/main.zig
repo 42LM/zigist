@@ -1,13 +1,13 @@
 const std = @import("std");
 const http = std.http;
-const Client = http.Client;
 const time = std.time;
 const Allocator = std.mem.Allocator;
-
-var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-const calloc = gpa.allocator();
+const Client = http.Client;
 
 pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const alloc = gpa.allocator();
+
     // get token and gist id from env
     const token = std.os.getenv("GH_TOKEN") orelse "";
     const gist_id = std.os.getenv("GIST_ID") orelse "";
@@ -16,19 +16,19 @@ pub fn main() !void {
     //
     // for reference:
     //      https://docs.github.com/en/rest/gists/gists?apiVersion=2022-11-28#update-a-gist
-    const location = try std.fmt.allocPrint(calloc, "https://api.github.com/gists/{s}", .{gist_id});
-    defer calloc.free(location);
+    const location = try std.fmt.allocPrint(alloc, "https://api.github.com/gists/{s}", .{gist_id});
+    defer alloc.free(location);
     const uri = try std.Uri.parse(location);
 
     // build the bearer string for the authorization header
-    const bearer = try std.fmt.allocPrint(calloc, "Bearer {s}", .{token});
-    defer calloc.free(bearer);
+    const bearer = try std.fmt.allocPrint(alloc, "Bearer {s}", .{token});
+    defer alloc.free(bearer);
 
     // our http client, this can make multiple requests (and is even threadsafe, although individual requests are not).
-    var client = Client{ .allocator = calloc };
+    var client = Client{ .allocator = alloc };
 
     // these are the headers we'll be sending to the server
-    var headers = http.Headers{ .allocator = calloc };
+    var headers = http.Headers{ .allocator = alloc };
     try headers.append("accept", "*/*");
     try headers.append("authorization", bearer);
     defer headers.deinit();
@@ -43,10 +43,21 @@ pub fn main() !void {
     try req.start();
 
     // build the payload with the help of a config.json file
-    const config = try readConfig(calloc, "config.json");
+    const config = try readConfig(alloc, "config.json");
     // TODO: convert epoch unix timestamp to datetime
-    var payload = std.fmt.allocPrint(calloc, "{{\"files\":{{\"NEWS.md\":{{\"content\":\"{s}\\n> unix ts {d}\"}}}}", .{ config.content, time.timestamp() }) catch "format failed";
-    defer calloc.free(payload);
+    // TODO: create struct and use json.stringify
+    var payload = std.fmt.allocPrint(
+        alloc,
+        \\ {{
+        \\ "files":{{
+        \\      "NEWS.md":{{
+        \\          "content":"{s}\n> unix ts {d}"
+        \\      }}
+        \\ }}
+    ,
+        .{ config.content, time.timestamp() },
+    ) catch "format failed";
+    defer alloc.free(payload);
 
     try req.writer().writeAll(payload);
     try req.finish();
