@@ -4,8 +4,7 @@ const time = std.time;
 const Allocator = std.mem.Allocator;
 const Client = http.Client;
 
-const content = "# Hello world\\nHey there random developer 👋, have a great day!";
-
+// TODO: refactor
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const alloc = gpa.allocator();
@@ -13,6 +12,40 @@ pub fn main() !void {
     // get token and gist id from env
     const token = std.os.getenv("GH_TOKEN") orelse "";
     const gist_id = std.os.getenv("GIST_ID") orelse "";
+
+    // our http client, this can make multiple requests (and is even threadsafe, although individual requests are not).
+    var client = Client{ .allocator = alloc };
+
+    // GET JOKE REQ
+    const joke_location = "https://backend-omega-seven.vercel.app/api/getjoke";
+    const joke_uri = try std.Uri.parse(joke_location);
+
+    // these are the headers we'll be sending to the server
+    var joke_headers = http.Headers{ .allocator = alloc };
+    try joke_headers.append("accept", "*/*");
+    defer joke_headers.deinit();
+
+    // make the connection and set up the request
+    var joke_req = try client.request(.GET, joke_uri, joke_headers, .{});
+    defer joke_req.deinit();
+
+    // send the request and headers to the server.
+    try joke_req.start();
+    // wait for the server to send a response
+    try joke_req.wait();
+
+    // read the entire response body, but only allow it to allocate 8kb of memory
+    const body = joke_req.reader().readAllAlloc(alloc, 8192) catch unreachable;
+    defer alloc.free(body);
+
+    const parsedData = try std.json.parseFromSlice([]Joke, alloc, body, .{});
+    defer alloc.free(parsedData);
+    const question = try std.fmt.allocPrint(alloc, "{s}", .{parsedData[0].question});
+    defer alloc.free(question);
+    const punchline = try std.fmt.allocPrint(alloc, "{s}", .{parsedData[0].punchline});
+    defer alloc.free(punchline);
+
+    // UPDATE GIST REQ
 
     // build the uri with the gist_id
     //
@@ -25,9 +58,6 @@ pub fn main() !void {
     // build the bearer string for the authorization header
     const bearer = try std.fmt.allocPrint(alloc, "Bearer {s}", .{token});
     defer alloc.free(bearer);
-
-    // our http client, this can make multiple requests (and is even threadsafe, although individual requests are not).
-    var client = Client{ .allocator = alloc };
 
     // these are the headers we'll be sending to the server
     var headers = http.Headers{ .allocator = alloc };
@@ -51,11 +81,11 @@ pub fn main() !void {
         \\ {{
         \\ "files":{{
         \\      "NEWS.md":{{
-        \\          "content":"{s}\n> unix ts {d}"
+        \\          "content":"# Random dev joke\n{s}\n* {s}\n\n> unix ts {d}"
         \\      }}
         \\ }}
     ,
-        .{ content, time.timestamp() },
+        .{ question, punchline, time.timestamp() },
     ) catch "format failed";
     defer alloc.free(payload);
 
@@ -71,5 +101,10 @@ pub fn main() !void {
         std.debug.print("something went wrong: {u}", .{req.response.status});
     }
 }
+
+const Joke = struct {
+    question: []const u8,
+    punchline: []const u8,
+};
 
 // TODO: test
