@@ -4,6 +4,11 @@ const time = std.time;
 const Allocator = std.mem.Allocator;
 const Client = http.Client;
 
+const Joke = struct {
+    question: []const u8,
+    punchline: []const u8,
+};
+
 // TODO: refactor
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -93,10 +98,5 @@ pub fn main() !void {
         std.debug.print("something went wrong: {u}", .{req.response.status});
     }
 }
-
-const Joke = struct {
-    question: []const u8,
-    punchline: []const u8,
-};
 
 // TODO: test
