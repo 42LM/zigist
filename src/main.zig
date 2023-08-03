@@ -6,8 +6,10 @@ const Client = http.Client;
 
 // TODO: refactor
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const alloc = gpa.allocator();
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+
+    const alloc = arena.allocator();
 
     // get token and gist id from env
     const token = std.os.getenv("GH_TOKEN") orelse "";
@@ -23,11 +25,9 @@ pub fn main() !void {
     // these are the headers we'll be sending to the server
     var joke_headers = http.Headers{ .allocator = alloc };
     try joke_headers.append("accept", "*/*");
-    defer joke_headers.deinit();
 
     // make the connection and set up the request
-    var joke_req = try client.request(.GET, joke_uri, joke_headers, .{});
-    defer joke_req.deinit();
+    var joke_req = try client.request(http.Method.GET, joke_uri, joke_headers, .{});
 
     // send the request and headers to the server.
     try joke_req.start();
@@ -40,9 +40,7 @@ pub fn main() !void {
 
     const parsedData = try std.json.parseFromSlice([]Joke, alloc, body, .{});
     const question = try std.fmt.allocPrint(alloc, "{s}", .{parsedData.value[0].question});
-    defer alloc.free(question);
     const punchline = try std.fmt.allocPrint(alloc, "{s}", .{parsedData.value[0].punchline});
-    defer alloc.free(punchline);
 
     // UPDATE GIST REQ
 
@@ -51,22 +49,18 @@ pub fn main() !void {
     // for reference:
     //      https://docs.github.com/en/rest/gists/gists?apiVersion=2022-11-28#update-a-gist
     const location = try std.fmt.allocPrint(alloc, "https://api.github.com/gists/{s}", .{gist_id});
-    defer alloc.free(location);
     const uri = try std.Uri.parse(location);
 
     // build the bearer string for the authorization header
     const bearer = try std.fmt.allocPrint(alloc, "Bearer {s}", .{token});
-    defer alloc.free(bearer);
 
     // these are the headers we'll be sending to the server
     var headers = http.Headers{ .allocator = alloc };
     try headers.append("accept", "*/*");
     try headers.append("authorization", bearer);
-    defer headers.deinit();
 
     // make the connection and set up the request
     var req = try client.request(.PATCH, uri, headers, .{});
-    defer req.deinit();
 
     req.transfer_encoding = .chunked;
 
@@ -86,7 +80,6 @@ pub fn main() !void {
     ,
         .{ question, punchline, time.timestamp() },
     ) catch "format failed";
-    defer alloc.free(payload);
 
     try req.writer().writeAll(payload);
     try req.finish();
