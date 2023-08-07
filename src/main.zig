@@ -1,5 +1,6 @@
 const std = @import("std");
 const http = std.http;
+const log = std.log;
 const testing = std.testing;
 const time = std.time;
 const Allocator = std.mem.Allocator;
@@ -102,9 +103,9 @@ pub fn main() !void {
     try req.wait();
 
     if (req.response.status == http.Status.ok) {
-        std.debug.print("gist updated successfully: {u}", .{req.response.status});
+        log.info("gist updated successfully: {u}", .{req.response.status});
     } else {
-        std.debug.print("something went wrong: {u}", .{req.response.status});
+        log.info("something went wrong: {u}", .{req.response.status});
     }
 }
 
