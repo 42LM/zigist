@@ -3,6 +3,7 @@ const http = std.http;
 const time = std.time;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
+const ArrayListAligned = std.ArrayListAligned;
 const Client = http.Client;
 
 const ZigistError = error{
@@ -107,26 +108,25 @@ pub fn main() !void {
     }
 }
 
-fn Conv(alloc: Allocator, s: []u8) []u8 {
-    var slice = std.ArrayList(u8).init(alloc);
+fn Conv(alloc: Allocator, s: []u8) ![]u8 {
+    var list = std.ArrayList(u8).init(alloc);
+    defer list.deinit();
 
-    if (s.len > 35) {
-        var count: u32 = 0;
-        for (s, 0..s.len) |c, _| {
-            if (c == 32 and count > 35) {
-                slice.append(' ') catch unreachable;
-                slice.append(' ') catch unreachable;
-                slice.append('\\') catch unreachable;
-                slice.append('n') catch unreachable;
-                count = 0;
-            } else {
-                slice.append(c) catch unreachable;
-                count += 1;
-            }
+    var count: u32 = 0;
+    for (s) |c| {
+        if (c == 32 and count > 35) {
+            try list.append(' ');
+            try list.append(' ');
+            try list.append('\\');
+            try list.append('n');
+            count = 0;
+        } else {
+            try list.append(c);
+            count += 1;
         }
     }
 
-    return slice.items;
+    return list.toOwnedSlice();
 }
 
 fn Getenv(name: []const u8) error{MissingEnvironmentVariable}![]const u8 {
@@ -139,22 +139,21 @@ fn Getenv(name: []const u8) error{MissingEnvironmentVariable}![]const u8 {
     return env.?;
 }
 
-// XXX: create test string without allocPrint
+// XXX: create test string/slice without allocPrint
 test "ok - conv" {
-    var alloc = std.heap.page_allocator;
+    var alloc = std.testing.allocator;
     var question = try std.fmt.allocPrint(alloc, "a really really totally crazy long sentence that needs to be split in multiple lines", .{});
     defer alloc.free(question);
 
-    const multiLineStr = Conv(alloc, question);
-    defer alloc.free(multiLineStr);
+    const res = try Conv(alloc, question);
+    defer alloc.free(res);
 
-    try std.testing.expect(std.mem.eql(u8, "a really really totally crazy long sentence  \\nthat needs to be split in multiple lines", multiLineStr));
+    try std.testing.expect(std.mem.eql(u8, "a really really totally crazy long sentence  \\nthat needs to be split in multiple lines", res));
 }
 
 test "error - env var does not exist" {
     _ = Getenv("") catch |err| {
         try std.testing.expect(err == ZigistError.MissingEnvironmentVariable);
-        return;
     };
 }
 
