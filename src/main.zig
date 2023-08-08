@@ -37,11 +37,11 @@ pub fn main() !void {
     const joke_location = "https://backend-omega-seven.vercel.app/api/getjoke";
     const joke_uri = try std.Uri.parse(joke_location);
 
-    var joke_headers = http.Headers{ .allocator = alloc };
-    try joke_headers.append("accept", "*/*");
+    var headers = http.Headers{ .allocator = alloc };
+    try headers.append("accept", "*/*");
 
     // make the connection and set up the request
-    var joke_req = try client.request(http.Method.GET, joke_uri, joke_headers, .{});
+    var joke_req = try client.request(http.Method.GET, joke_uri, headers, .{});
 
     // send the request and headers to the server.
     try joke_req.start();
@@ -54,10 +54,11 @@ pub fn main() !void {
 
     const parsedData = try std.json.parseFromSliceLeaky([]Joke, alloc, body, .{});
     var question = try std.fmt.allocPrint(alloc, "{s}", .{parsedData[0].question});
-    const punchline = try std.fmt.allocPrint(alloc, "{s}", .{parsedData[0].punchline});
+    var punchline = try std.fmt.allocPrint(alloc, "{s}", .{parsedData[0].punchline});
 
     // split into smaller parts
-    question = try Conv(alloc, question);
+    question = try Conv(alloc, question, false);
+    punchline = try Conv(alloc, punchline, true);
 
     // UPDATE GIST REQ
 
@@ -71,7 +72,7 @@ pub fn main() !void {
     // build the bearer string for the authorization header
     const bearer = try std.fmt.allocPrint(alloc, "Bearer {s}", .{token});
 
-    var headers = http.Headers{ .allocator = alloc };
+    headers = http.Headers{ .allocator = alloc };
     try headers.append("accept", "*/*");
     try headers.append("authorization", bearer);
 
@@ -109,7 +110,7 @@ pub fn main() !void {
     }
 }
 
-fn Conv(alloc: Allocator, s: []u8) ![]u8 {
+fn Conv(alloc: Allocator, s: []u8, punchline: bool) ![]u8 {
     var list = std.ArrayList(u8).init(alloc);
     defer list.deinit();
 
@@ -120,6 +121,10 @@ fn Conv(alloc: Allocator, s: []u8) ![]u8 {
             try list.append(' ');
             try list.append('\\');
             try list.append('n');
+            if (punchline) {
+                try list.append(' ');
+                try list.append(' ');
+            }
             count = 0;
         } else {
             try list.append(c);
@@ -140,13 +145,32 @@ fn Getenv(name: []const u8) error{MissingEnvironmentVariable}![]const u8 {
     return env.?;
 }
 
-// XXX: create test string/slice without allocPrint
-test "ok - conv" {
+test "ok - conv punchline" {
     var alloc = testing.allocator;
-    var question = try std.fmt.allocPrint(alloc, "a really really totally crazy long sentence that needs to be split in multiple lines", .{});
+    const punchline = try std.fmt.allocPrint(alloc, "a really really long punchline that needs to be split", .{});
+    defer alloc.free(punchline);
+
+    const exp = try Conv(alloc, punchline, true);
+    defer alloc.free(exp);
+
+    try testing.expect(std.mem.eql(u8, "a really really long punchline that needs  \\n  to be split", exp));
+
+    const punchline2 = try std.fmt.allocPrint(alloc, "a really really long punchline that needs to be split multiple times, not only once ...crazy isn't it?", .{});
+    defer alloc.free(punchline2);
+
+    const exp2 = try Conv(alloc, punchline2, true);
+    defer alloc.free(exp2);
+
+    try testing.expect(std.mem.eql(u8, "a really really long punchline that needs  \\n  to be split multiple times, not only  \\n  once ...crazy isn't it?", exp2));
+}
+
+// XXX: create test string/slice without allocPrint
+test "ok - conv question" {
+    var alloc = testing.allocator;
+    const question = try std.fmt.allocPrint(alloc, "a really really totally crazy long sentence that needs to be split in multiple lines", .{});
     defer alloc.free(question);
 
-    const res = try Conv(alloc, question);
+    const res = try Conv(alloc, question, false);
     defer alloc.free(res);
 
     try testing.expect(std.mem.eql(u8, "a really really totally crazy long sentence  \\nthat needs to be split in multiple lines", res));
