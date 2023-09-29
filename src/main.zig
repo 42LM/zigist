@@ -47,7 +47,7 @@ pub fn main() !void {
     var joke_req = try client.request(http.Method.GET, joke_uri, headers, .{});
 
     // send the request and headers to the server.
-    try joke_req.start();
+    try joke_req.start(http.Client.Request.StartOptions{});
     // wait for the server to send a response
     try joke_req.wait();
 
@@ -85,7 +85,7 @@ pub fn main() !void {
     req.transfer_encoding = .chunked;
 
     // send the request and headers to the server.
-    try req.start();
+    try req.start(http.Client.Request.StartOptions{});
 
     // TODO: convert epoch unix timestamp to datetime
     var payload = std.fmt.allocPrint(
