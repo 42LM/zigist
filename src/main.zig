@@ -300,7 +300,7 @@ pub fn timestamp2DateTime(timestamp: i64) DateTime {
 }
 
 fn dateTime2String(alloc: Allocator, dt: DateTime) ![]u8 {
-    var ts = try std.fmt.allocPrint(alloc, "{d}.{:0<2}.{:0<4} {:0<2}:{:0<2}:{:0<2}", .{ dt.day, dt.month, dt.year, dt.hour, dt.minute, dt.second });
+    var ts = try std.fmt.allocPrint(alloc, "{d}.{:0<2}.{:0<4} {d}:{:0<2}:{:0<2}", .{ dt.day, dt.month, dt.year, dt.hour, dt.minute, dt.second });
     // defer alloc.free(ts);
 
     return ts;
