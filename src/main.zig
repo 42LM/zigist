@@ -46,6 +46,7 @@ pub fn main() !void {
     // make the connection and set up the request
     // for simplicity fetch is being used for a one shot HTTP request here
     var joke_req = try client.fetch(alloc, http.Client.FetchOptions{ .location = http.Client.FetchOptions.Location{ .uri = joke_uri } });
+    defer joke_req.deinit();
 
     const body = joke_req.body.?;
     defer alloc.free(body);
@@ -93,6 +94,7 @@ pub fn main() !void {
     // make the connection and set up the request
     // for simplicity fetch is being used for a one shot HTTP request here
     var req = try client.fetch(alloc, http.Client.FetchOptions{ .method = .PATCH, .location = http.Client.FetchOptions.Location{ .uri = uri }, .headers = headers, .payload = http.Client.FetchOptions.Payload{ .string = payload } });
+    defer req.deinit();
 
     if (req.status == http.Status.ok) {
         log.info("gist updated successfully: {u}", .{req.status});
