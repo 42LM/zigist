@@ -2,6 +2,7 @@ const std = @import("std");
 const http = std.http;
 const time = std.time;
 const Allocator = std.mem.Allocator;
+const ArrayList = std.ArrayList;
 const Client = http.Client;
 
 const ZigistError = error{
@@ -13,7 +14,7 @@ const Joke = struct {
     punchline: []const u8,
 };
 
-// TODO: refactor
+// TODO: refactor more
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -50,8 +51,11 @@ pub fn main() !void {
     defer alloc.free(body);
 
     const parsedData = try std.json.parseFromSlice([]Joke, alloc, body, .{});
-    const question = try std.fmt.allocPrint(alloc, "{s}", .{parsedData.value[0].question});
+    var question = try std.fmt.allocPrint(alloc, "{s}", .{parsedData.value[0].question});
     const punchline = try std.fmt.allocPrint(alloc, "{s}", .{parsedData.value[0].punchline});
+
+    // split into smaller parts
+    question = Conv(alloc, question);
 
     // UPDATE GIST REQ
 
@@ -78,7 +82,6 @@ pub fn main() !void {
     try req.start();
 
     // TODO: convert epoch unix timestamp to datetime
-    // TODO: split at 40 chars (do not make line longer than 40 chars)
     var payload = std.fmt.allocPrint(
         alloc,
         \\ {{
@@ -104,6 +107,28 @@ pub fn main() !void {
     }
 }
 
+fn Conv(alloc: Allocator, s: []u8) []u8 {
+    var slice = std.ArrayList(u8).init(alloc);
+
+    if (s.len > 35) {
+        var count: u32 = 0;
+        for (s, 0..s.len) |c, _| {
+            if (c == 32 and count > 35) {
+                slice.append(' ') catch unreachable;
+                slice.append(' ') catch unreachable;
+                slice.append('\\') catch unreachable;
+                slice.append('n') catch unreachable;
+                count = 0;
+            } else {
+                slice.append(c) catch unreachable;
+                count += 1;
+            }
+        }
+    }
+
+    return slice.items;
+}
+
 fn Getenv(name: []const u8) error{MissingEnvironmentVariable}![]const u8 {
     var env = std.os.getenv(name);
 
@@ -112,6 +137,18 @@ fn Getenv(name: []const u8) error{MissingEnvironmentVariable}![]const u8 {
     }
 
     return env.?;
+}
+
+// XXX: create test string without allocPrint
+test "ok - conv" {
+    var alloc = std.heap.page_allocator;
+    var question = try std.fmt.allocPrint(alloc, "a really really totally crazy long sentence that needs to be split in multiple lines", .{});
+    defer alloc.free(question);
+
+    const multiLineStr = Conv(alloc, question);
+    defer alloc.free(multiLineStr);
+
+    try std.testing.expect(std.mem.eql(u8, "a really really totally crazy long sentence  \\nthat needs to be split in multiple lines", multiLineStr));
 }
 
 test "error - env var does not exist" {
