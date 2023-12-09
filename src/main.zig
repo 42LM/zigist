@@ -39,10 +39,9 @@ pub fn main() !void {
     defer alloc.free(body);
 
     const parsedData = try std.json.parseFromSlice([]Joke, alloc, body, .{});
-    defer alloc.free(parsedData);
-    const question = try std.fmt.allocPrint(alloc, "{s}", .{parsedData[0].question});
+    const question = try std.fmt.allocPrint(alloc, "{s}", .{parsedData.value[0].question});
     defer alloc.free(question);
-    const punchline = try std.fmt.allocPrint(alloc, "{s}", .{parsedData[0].punchline});
+    const punchline = try std.fmt.allocPrint(alloc, "{s}", .{parsedData.value[0].punchline});
     defer alloc.free(punchline);
 
     // UPDATE GIST REQ
