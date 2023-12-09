@@ -45,7 +45,7 @@ pub fn main() !void {
     // build the payload with the help of a config.json file
     const config = try readConfig(calloc, "config.json");
     // TODO: convert epoch unix timestamp to datetime
-    var payload = std.fmt.allocPrint(calloc, "{{\"description\":\"ZIGZIG\",\"files\":{{\"NEWS.md\":{{\"content\":\"{s}\\n> unix ts {d}\"}}}}", .{ config.content, time.timestamp() }) catch "format failed";
+    var payload = std.fmt.allocPrint(calloc, "{{\"files\":{{\"NEWS.md\":{{\"content\":\"{s}\\n> unix ts {d}\"}}}}", .{ config.content, time.timestamp() }) catch "format failed";
     defer calloc.free(payload);
 
     try req.writer().writeAll(payload);
@@ -54,7 +54,11 @@ pub fn main() !void {
     // wait for the server to send a response
     try req.wait();
 
-    std.debug.print("gist updated successfully: {u}", .{req.response.status});
+    if (req.response.status == http.Status.ok) {
+        std.debug.print("gist updated successfully: {u}", .{req.response.status});
+    } else {
+        std.debug.print("something went wrong: {u}", .{req.response.status});
+    }
 }
 
 fn readConfig(allocator: Allocator, path: []const u8) !Config {
