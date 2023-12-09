@@ -34,6 +34,9 @@ pub fn main() !void {
     var client = Client{ .allocator = alloc };
 
     // GET JOKE REQ
+    //
+    // for reference:
+    //      https://documenter.getpostman.com/view/16443297/TzkyLee7#c55ef73d-6983-4528-97d0-eb62af3c45b6
     const joke_location = "https://backend-omega-seven.vercel.app/api/getjoke";
     const joke_uri = try std.Uri.parse(joke_location);
 
