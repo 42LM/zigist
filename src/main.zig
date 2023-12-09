@@ -87,17 +87,20 @@ pub fn main() !void {
     // send the request and headers to the server.
     try req.start(http.Client.Request.StartOptions{});
 
-    // TODO: convert epoch unix timestamp to datetime
+    // convert epoch unix timestamp to datetime
+    const dateTime = timestamp2DateTime(time.timestamp());
+    const timestamp = try dateTime2String(alloc, dateTime);
+
     var payload = std.fmt.allocPrint(
         alloc,
         \\ {{
         \\ "files":{{
         \\      "NEWS.md":{{
-        \\          "content":"{s}\n* {s}\n\n> {d}"
+        \\          "content":"{s}\n* {s}\n\n> {s}"
         \\      }}
         \\ }}
     ,
-        .{ question, punchline, printNowUtc() },
+        .{ question, punchline, timestamp },
     ) catch "format failed";
 
     try req.writer().writeAll(payload);
@@ -244,36 +247,9 @@ const timeOffsets_Berlin = [_]TimeOffset{
     TimeOffset{ .from = 0, .offset = 3600 }, //
 };
 
-fn findUnixOffset(unix: i64) i16 {
-    for (timeOffsets_Berlin) |to| {
-        if (to.from <= unix) {
-            return to.offset;
-        }
-    }
-    unreachable; // Tabelle muss erweitert werden!
-}
-
-fn findLocalOffset(local: i64) i16 {
-    for (timeOffsets_Berlin) |to| {
-        if (to.from + to.offset <= local) {
-            return to.offset;
-        }
-    }
-    unreachable; // Tabelle muss erweitert werden!
-}
-
-pub fn unix2local(unix: i64) i64 {
-    const offset = findUnixOffset(unix);
-    return unix + offset;
-}
-
-pub fn local2unix(local: i64) i64 {
-    const offset = findLocalOffset(local);
-    return local - offset;
-}
-
 pub const DateTime = struct { day: u8, month: u8, year: u16, hour: u8, minute: u8, second: u8 };
 
+/// timestamp2DateTime converts a unix epoch timestamp to a DateTime object.
 pub fn timestamp2DateTime(timestamp: i64) DateTime {
     // aus https://de.wikipedia.org/wiki/Unixzeit
     const unixtime: u64 = @intCast(timestamp);
@@ -323,35 +299,17 @@ pub fn timestamp2DateTime(timestamp: i64) DateTime {
     return DateTime{ .day = tag, .month = monat, .year = jahr, .hour = stunde, .minute = minute, .second = sekunde };
 }
 
-pub fn printDateTime(dt: DateTime) void {
-    std.debug.print("{:0<2}.{:0<2}.{:0<4} {:0<2}:{:0<2}:{:0<2}\n", .{
-        dt.day,
-        dt.month,
-        dt.year,
-        dt.hour,
-        dt.minute,
-        dt.second,
-    });
-}
+fn dateTime2String(alloc: Allocator, dt: DateTime) ![]u8 {
+    var ts = try std.fmt.allocPrint(alloc, "{d}.{:0<2}.{:0<4} {:0<2}:{:0<2}:{:0<2}", .{ dt.day, dt.month, dt.year, dt.hour, dt.minute, dt.second });
+    // defer alloc.free(ts);
 
-pub fn printNowLocal() void {
-    printDateTime(timestamp2DateTime(unix2local(std.time.timestamp())));
-}
-
-pub fn printNowUtc() void {
-    printDateTime(timestamp2DateTime(std.time.timestamp()));
+    return ts;
 }
 
 test "GMT and localtime" {
     // Summer, CEST
-    try std.testing.expect(unix2local(1598607147) == 1598607147 + 7200);
     try std.testing.expectEqual(DateTime{ .year = 2020, .month = 8, .day = 28, .hour = 9, .minute = 32, .second = 27 }, timestamp2DateTime(1598607147));
-    try std.testing.expectEqual(DateTime{ .year = 2020, .month = 8, .day = 28, .hour = 11, .minute = 32, .second = 27 }, timestamp2DateTime(unix2local(1598607147)));
-    try std.testing.expect(local2unix(unix2local(1598607147)) == 1598607147);
 
     // Winter, CET
-    try std.testing.expect(unix2local(1604207167) == 1604207167 + 3600);
     try std.testing.expectEqual(DateTime{ .year = 2020, .month = 11, .day = 1, .hour = 5, .minute = 6, .second = 7 }, timestamp2DateTime(1604207167));
-    try std.testing.expectEqual(DateTime{ .year = 2020, .month = 11, .day = 1, .hour = 6, .minute = 6, .second = 7 }, timestamp2DateTime(unix2local(1604207167)));
-    try std.testing.expect(local2unix(unix2local(1604207167)) == 1604207167);
 }
