@@ -52,12 +52,12 @@ pub fn main() !void {
     const body = joke_req.reader().readAllAlloc(alloc, 8192) catch unreachable;
     defer alloc.free(body);
 
-    const parsedData = try std.json.parseFromSlice([]Joke, alloc, body, .{});
-    var question = try std.fmt.allocPrint(alloc, "{s}", .{parsedData.value[0].question});
-    const punchline = try std.fmt.allocPrint(alloc, "{s}", .{parsedData.value[0].punchline});
+    const parsedData = try std.json.parseFromSliceLeaky([]Joke, alloc, body, .{});
+    var question = try std.fmt.allocPrint(alloc, "{s}", .{parsedData[0].question});
+    const punchline = try std.fmt.allocPrint(alloc, "{s}", .{parsedData[0].punchline});
 
     // split into smaller parts
-    question = Conv(alloc, question);
+    question = try Conv(alloc, question);
 
     // UPDATE GIST REQ
 
