@@ -4,6 +4,8 @@ const time = std.time;
 const Allocator = std.mem.Allocator;
 const Client = http.Client;
 
+const content = "# Hello world\\nHey there random developer 👋, have a great day!";
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const alloc = gpa.allocator();
@@ -42,8 +44,6 @@ pub fn main() !void {
     // send the request and headers to the server.
     try req.start();
 
-    // build the payload with the help of a config.json file
-    const config = try readConfig(alloc, "config.json");
     // TODO: convert epoch unix timestamp to datetime
     // TODO: create struct and use json.stringify
     var payload = std.fmt.allocPrint(
@@ -55,7 +55,7 @@ pub fn main() !void {
         \\      }}
         \\ }}
     ,
-        .{ config.content, time.timestamp() },
+        .{ content, time.timestamp() },
     ) catch "format failed";
     defer alloc.free(payload);
 
@@ -71,15 +71,5 @@ pub fn main() !void {
         std.debug.print("something went wrong: {u}", .{req.response.status});
     }
 }
-
-fn readConfig(allocator: Allocator, path: []const u8) !Config {
-    const data = try std.fs.cwd().readFileAlloc(allocator, path, 512);
-    defer allocator.free(data);
-    return try std.json.parseFromSlice(Config, allocator, data, .{});
-}
-
-const Config = struct {
-    content: []const u8,
-};
 
 // TODO: test
