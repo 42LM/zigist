@@ -1,9 +1,9 @@
 const std = @import("std");
 const http = std.http;
+const testing = std.testing;
 const time = std.time;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
-const ArrayListAligned = std.ArrayListAligned;
 const Client = http.Client;
 
 const ZigistError = error{
@@ -141,23 +141,23 @@ fn Getenv(name: []const u8) error{MissingEnvironmentVariable}![]const u8 {
 
 // XXX: create test string/slice without allocPrint
 test "ok - conv" {
-    var alloc = std.testing.allocator;
+    var alloc = testing.allocator;
     var question = try std.fmt.allocPrint(alloc, "a really really totally crazy long sentence that needs to be split in multiple lines", .{});
     defer alloc.free(question);
 
     const res = try Conv(alloc, question);
     defer alloc.free(res);
 
-    try std.testing.expect(std.mem.eql(u8, "a really really totally crazy long sentence  \\nthat needs to be split in multiple lines", res));
+    try testing.expect(std.mem.eql(u8, "a really really totally crazy long sentence  \\nthat needs to be split in multiple lines", res));
 }
 
 test "error - env var does not exist" {
     _ = Getenv("") catch |err| {
-        try std.testing.expect(err == ZigistError.MissingEnvironmentVariable);
+        try testing.expect(err == ZigistError.MissingEnvironmentVariable);
     };
 }
 
 test "ok - env var does exist" {
     const actual = Getenv("GIST_ID");
-    try std.testing.expect(std.mem.eql(u8, "d0313228583992554c58c626b7df7f2f", try actual));
+    try testing.expect(std.mem.eql(u8, "d0313228583992554c58c626b7df7f2f", try actual));
 }
