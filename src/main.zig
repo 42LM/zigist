@@ -44,15 +44,10 @@ pub fn main() !void {
     try headers.append("accept", "*/*");
 
     // make the connection and set up the request
-    var joke_req = try client.request(http.Method.GET, joke_uri, headers, .{});
+    // for simplicity fetch is being used for a one shot HTTP request here
+    var joke_req = try client.fetch(alloc, http.Client.FetchOptions{ .location = http.Client.FetchOptions.Location{ .uri = joke_uri } });
 
-    // send the request and headers to the server.
-    try joke_req.start(http.Client.Request.StartOptions{});
-    // wait for the server to send a response
-    try joke_req.wait();
-
-    // read the entire response body, but only allow it to allocate 8kb of memory
-    const body = joke_req.reader().readAllAlloc(alloc, 8192) catch unreachable;
+    const body = joke_req.body.?;
     defer alloc.free(body);
 
     const parsedData = try std.json.parseFromSliceLeaky([]Joke, alloc, body, .{});
@@ -79,14 +74,6 @@ pub fn main() !void {
     try headers.append("accept", "*/*");
     try headers.append("authorization", bearer);
 
-    // make the connection and set up the request
-    var req = try client.request(.PATCH, uri, headers, .{});
-
-    req.transfer_encoding = .chunked;
-
-    // send the request and headers to the server.
-    try req.start(http.Client.Request.StartOptions{});
-
     // convert epoch unix timestamp to datetime
     const dateTime = timestamp2DateTime(time.timestamp());
     const timestamp = try dateTime2String(alloc, dateTime);
@@ -103,16 +90,14 @@ pub fn main() !void {
         .{ question, punchline, timestamp },
     ) catch "format failed";
 
-    try req.writer().writeAll(payload);
-    try req.finish();
+    // make the connection and set up the request
+    // for simplicity fetch is being used for a one shot HTTP request here
+    var req = try client.fetch(alloc, http.Client.FetchOptions{ .method = .PATCH, .location = http.Client.FetchOptions.Location{ .uri = uri }, .headers = headers, .payload = http.Client.FetchOptions.Payload{ .string = payload } });
 
-    // wait for the server to send a response
-    try req.wait();
-
-    if (req.response.status == http.Status.ok) {
-        log.info("gist updated successfully: {u}", .{req.response.status});
+    if (req.status == http.Status.ok) {
+        log.info("gist updated successfully: {u}", .{req.status});
     } else {
-        log.info("something went wrong: {u}", .{req.response.status});
+        log.info("something went wrong: {u}", .{req.status});
     }
 }
 
