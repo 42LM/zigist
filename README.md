@@ -1,2 +1,2 @@
 # zigist
-cron job to update gist
+Nothing fancy here, just a simple cron job to update a gist.
