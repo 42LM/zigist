@@ -4,6 +4,10 @@ const time = std.time;
 const Allocator = std.mem.Allocator;
 const Client = http.Client;
 
+const ZigistError = error{
+    MissingEnvironmentVariable,
+};
+
 const Joke = struct {
     question: []const u8,
     punchline: []const u8,
@@ -16,18 +20,20 @@ pub fn main() !void {
 
     const alloc = arena.allocator();
 
-    // get token and gist id from env
-    const token = std.os.getenv("GH_TOKEN") orelse "";
-    const gist_id = std.os.getenv("GIST_ID") orelse "";
+    // get token and gist id from env vars
+    const token = Getenv("GH_TOKEN") catch |err| {
+        return err;
+    };
+    const gist_id = Getenv("GIST_ID") catch |err| {
+        return err;
+    };
 
-    // our http client, this can make multiple requests (and is even threadsafe, although individual requests are not).
     var client = Client{ .allocator = alloc };
 
     // GET JOKE REQ
     const joke_location = "https://backend-omega-seven.vercel.app/api/getjoke";
     const joke_uri = try std.Uri.parse(joke_location);
 
-    // these are the headers we'll be sending to the server
     var joke_headers = http.Headers{ .allocator = alloc };
     try joke_headers.append("accept", "*/*");
 
@@ -59,7 +65,6 @@ pub fn main() !void {
     // build the bearer string for the authorization header
     const bearer = try std.fmt.allocPrint(alloc, "Bearer {s}", .{token});
 
-    // these are the headers we'll be sending to the server
     var headers = http.Headers{ .allocator = alloc };
     try headers.append("accept", "*/*");
     try headers.append("authorization", bearer);
@@ -73,7 +78,7 @@ pub fn main() !void {
     try req.start();
 
     // TODO: convert epoch unix timestamp to datetime
-    // TODO: create struct and use json.stringify
+    // TODO: split at 40 chars (do not make line longer than 40 chars)
     var payload = std.fmt.allocPrint(
         alloc,
         \\ {{
@@ -99,4 +104,24 @@ pub fn main() !void {
     }
 }
 
-// TODO: test
+fn Getenv(name: []const u8) error{MissingEnvironmentVariable}![]const u8 {
+    var env = std.os.getenv(name);
+
+    if (env == null) {
+        return ZigistError.MissingEnvironmentVariable;
+    }
+
+    return env.?;
+}
+
+test "error - env var does not exist" {
+    _ = Getenv("") catch |err| {
+        try std.testing.expect(err == ZigistError.MissingEnvironmentVariable);
+        return;
+    };
+}
+
+test "ok - env var does exist" {
+    const actual = Getenv("GIST_ID");
+    try std.testing.expect(std.mem.eql(u8, "d0313228583992554c58c626b7df7f2f", try actual));
+}
