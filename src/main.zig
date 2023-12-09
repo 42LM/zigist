@@ -93,7 +93,7 @@ pub fn main() !void {
         \\ {{
         \\ "files":{{
         \\      "NEWS.md":{{
-        \\          "content":"# Random dev joke\n{s}\n* {s}\n\n> unix ts {d}"
+        \\          "content":"{s}\n* {s}\n\n> unix ts {d}"
         \\      }}
         \\ }}
     ,
