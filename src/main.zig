@@ -8,6 +8,7 @@ const ArrayList = std.ArrayList;
 const Client = http.Client;
 
 const ZigistError = error{
+    FormatFailure,
     MissingEnvironmentVariable,
 };
 
@@ -18,12 +19,14 @@ const Joke = struct {
 
 // TODO: refactor more
 pub fn main() !void {
+    // https://ziglang.org/documentation/master/#Choosing-an-Allocator
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-
     const alloc = arena.allocator();
 
-    // get token and gist id from env vars
+    // get the required env variables
+    //      * token = github token with gist permission
+    //      * gist id = the id of the gist that should be updated
     const token = Getenv("GH_TOKEN") catch |err| {
         return err;
     };
@@ -32,20 +35,17 @@ pub fn main() !void {
     };
 
     var client = Client{ .allocator = alloc };
+    defer client.deinit();
 
     // GET JOKE REQ
     //
     // for reference:
     //      https://documenter.getpostman.com/view/16443297/TzkyLee7#c55ef73d-6983-4528-97d0-eb62af3c45b6
     const joke_location = "https://backend-omega-seven.vercel.app/api/getjoke";
-    const joke_uri = try std.Uri.parse(joke_location);
-
-    var headers = http.Headers{ .allocator = alloc };
-    try headers.append("accept", "*/*");
 
     // make the connection and set up the request
     // for simplicity fetch is being used for a one shot HTTP request here
-    var joke_req = try client.fetch(alloc, http.Client.FetchOptions{ .location = http.Client.FetchOptions.Location{ .uri = joke_uri } });
+    var joke_req = try client.fetch(alloc, http.Client.FetchOptions{ .location = http.Client.FetchOptions.Location{ .url = joke_location } });
     defer joke_req.deinit();
 
     const body = joke_req.body.?;
@@ -60,19 +60,15 @@ pub fn main() !void {
     punchline = try Conv(alloc, punchline, true);
 
     // UPDATE GIST REQ
-
-    // build the uri with the gist_id
     //
     // for reference:
     //      https://docs.github.com/en/rest/gists/gists?apiVersion=2022-11-28#update-a-gist
-    const location = try std.fmt.allocPrint(alloc, "https://api.github.com/gists/{s}", .{gist_id});
-    const uri = try std.Uri.parse(location);
+    const update_gist_location = try std.fmt.allocPrint(alloc, "https://api.github.com/gists/{s}", .{gist_id});
 
     // build the bearer string for the authorization header
     const bearer = try std.fmt.allocPrint(alloc, "Bearer {s}", .{token});
 
-    headers = http.Headers{ .allocator = alloc };
-    try headers.append("accept", "*/*");
+    var headers = http.Headers{ .allocator = alloc };
     try headers.append("authorization", bearer);
 
     // convert epoch unix timestamp to datetime
@@ -89,11 +85,13 @@ pub fn main() !void {
         \\ }}
     ,
         .{ question, punchline, timestamp },
-    ) catch "format failed";
+    ) catch {
+        return ZigistError.FormatFailure;
+    };
 
     // make the connection and set up the request
     // for simplicity fetch is being used for a one shot HTTP request here
-    var req = try client.fetch(alloc, http.Client.FetchOptions{ .method = .PATCH, .location = http.Client.FetchOptions.Location{ .uri = uri }, .headers = headers, .payload = http.Client.FetchOptions.Payload{ .string = payload } });
+    var req = try client.fetch(alloc, http.Client.FetchOptions{ .method = .PATCH, .location = http.Client.FetchOptions.Location{ .url = update_gist_location }, .headers = headers, .payload = http.Client.FetchOptions.Payload{ .string = payload } });
     defer req.deinit();
 
     if (req.status == http.Status.ok) {
@@ -103,7 +101,7 @@ pub fn main() !void {
     }
 }
 
-fn Conv(alloc: Allocator, s: []u8, punchline: bool) ![]u8 {
+fn Conv(alloc: Allocator, s: []const u8, punchline: bool) ![]u8 {
     var list = std.ArrayList(u8).init(alloc);
     defer list.deinit();
 
@@ -157,13 +155,10 @@ test "ok - conv punchline" {
     try testing.expect(std.mem.eql(u8, "a really really long punchline that needs  \\n  to be split multiple times, not only  \\n  once ...crazy isn't it?", exp2));
 }
 
-// XXX: create test string/slice without allocPrint
 test "ok - conv question" {
     var alloc = testing.allocator;
-    const question = try std.fmt.allocPrint(alloc, "a really really totally crazy long sentence that needs to be split in multiple lines", .{});
-    defer alloc.free(question);
 
-    const res = try Conv(alloc, question, false);
+    const res = try Conv(alloc, "a really really totally crazy long sentence that needs to be split in multiple lines", false);
     defer alloc.free(res);
 
     try testing.expect(std.mem.eql(u8, "a really really totally crazy long sentence  \\nthat needs to be split in multiple lines", res));
@@ -224,9 +219,17 @@ pub fn timestamp2DateTime(ts: u64) DateTime {
 }
 
 fn dateTime2String(alloc: Allocator, dt: DateTime) ![]u8 {
-    const ts = try std.fmt.allocPrint(alloc, "{d}.{:0<2}.{:0<4} {d}:{:0<2}:{:0<2}", .{ dt.day, dt.month, dt.year, dt.hour, dt.minute, dt.second });
+    const ts = try std.fmt.allocPrint(alloc, "{:0>2}.{:0>2}.{:0>4} {:0>2}:{:0>2}:{:0>2}", .{ dt.day, dt.month, dt.year, dt.hour, dt.minute, dt.second });
 
     return ts;
+}
+
+test "datetime 2 string" {
+    const alloc = testing.allocator;
+    const actual = try dateTime2String(alloc, DateTime{ .year = 2023, .month = 8, .day = 4, .hour = 9, .minute = 3, .second = 2 });
+    defer alloc.free(actual);
+
+    try testing.expectEqualStrings("04.08.2023 09:03:02", actual);
 }
 
 test "GMT and localtime" {
