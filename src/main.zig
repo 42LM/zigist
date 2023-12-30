@@ -138,16 +138,14 @@ fn Getenv(name: []const u8) error{MissingEnvironmentVariable}![]const u8 {
 
 test "ok - conv punchline" {
     var alloc = testing.allocator;
-    const punchline = try std.fmt.allocPrint(alloc, "a really really long punchline that needs to be split", .{});
-    defer alloc.free(punchline);
+    const punchline = "a really really long punchline that needs to be split";
 
     const exp = try Conv(alloc, punchline, true);
     defer alloc.free(exp);
 
     try testing.expect(std.mem.eql(u8, "a really really long punchline that needs  \\n  to be split", exp));
 
-    const punchline2 = try std.fmt.allocPrint(alloc, "a really really long punchline that needs to be split multiple times, not only once ...crazy isn't it?", .{});
-    defer alloc.free(punchline2);
+    const punchline2 = "a really really long punchline that needs to be split multiple times, not only once ...crazy isn't it?";
 
     const exp2 = try Conv(alloc, punchline2, true);
     defer alloc.free(exp2);
