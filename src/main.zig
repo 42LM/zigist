@@ -27,10 +27,10 @@ pub fn main() !void {
     // get the required env variables
     //      * token = github token with gist permission
     //      * gist id = the id of the gist that should be updated
-    const token = Getenv("GH_TOKEN") catch |err| {
+    const token = getENV("GH_TOKEN") catch |err| {
         return err;
     };
-    const gist_id = Getenv("GIST_ID") catch |err| {
+    const gist_id = getENV("GIST_ID") catch |err| {
         return err;
     };
 
@@ -126,7 +126,7 @@ fn splitStringIntoLines(alloc: Allocator, s: []const u8, punchline: bool) ![]u8 
     return list.toOwnedSlice();
 }
 
-fn Getenv(name: []const u8) error{MissingEnvironmentVariable}![]const u8 {
+fn getENV(name: []const u8) error{MissingEnvironmentVariable}![]const u8 {
     const env = std.os.getenv(name);
 
     if (env == null) {
@@ -163,13 +163,13 @@ test "ok - splitStringIntoLines question" {
 }
 
 test "error - env var does not exist" {
-    _ = Getenv("") catch |err| {
+    _ = getENV("") catch |err| {
         try testing.expect(err == ZigistError.MissingEnvironmentVariable);
     };
 }
 
 test "ok - env var does exist" {
-    const actual = Getenv("GIST_ID");
+    const actual = getENV("GIST_ID");
     try testing.expect(std.mem.eql(u8, "d0313228583992554c58c626b7df7f2f", try actual));
 }
 
