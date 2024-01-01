@@ -56,8 +56,8 @@ pub fn main() !void {
     var punchline = try std.fmt.allocPrint(alloc, "{s}", .{parsedData[0].punchline});
 
     // split into smaller parts
-    question = try Conv(alloc, question, false);
-    punchline = try Conv(alloc, punchline, true);
+    question = try conv(alloc, question, false);
+    punchline = try conv(alloc, punchline, true);
 
     // UPDATE GIST REQ
     //
@@ -101,7 +101,7 @@ pub fn main() !void {
     }
 }
 
-fn Conv(alloc: Allocator, s: []const u8, punchline: bool) ![]u8 {
+fn conv(alloc: Allocator, s: []const u8, punchline: bool) ![]u8 {
     var list = std.ArrayList(u8).init(alloc);
     defer list.deinit();
 
@@ -140,14 +140,14 @@ test "ok - conv punchline" {
     var alloc = testing.allocator;
     const punchline = "a really really long punchline that needs to be split";
 
-    const exp = try Conv(alloc, punchline, true);
+    const exp = try conv(alloc, punchline, true);
     defer alloc.free(exp);
 
     try testing.expect(std.mem.eql(u8, "a really really long punchline that needs  \\n  to be split", exp));
 
     const punchline2 = "a really really long punchline that needs to be split multiple times, not only once ...crazy isn't it?";
 
-    const exp2 = try Conv(alloc, punchline2, true);
+    const exp2 = try conv(alloc, punchline2, true);
     defer alloc.free(exp2);
 
     try testing.expect(std.mem.eql(u8, "a really really long punchline that needs  \\n  to be split multiple times, not only  \\n  once ...crazy isn't it?", exp2));
@@ -156,7 +156,7 @@ test "ok - conv punchline" {
 test "ok - conv question" {
     var alloc = testing.allocator;
 
-    const res = try Conv(alloc, "a really really totally crazy long sentence that needs to be split in multiple lines", false);
+    const res = try conv(alloc, "a really really totally crazy long sentence that needs to be split in multiple lines", false);
     defer alloc.free(res);
 
     try testing.expect(std.mem.eql(u8, "a really really totally crazy long sentence  \\nthat needs to be split in multiple lines", res));
