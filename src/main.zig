@@ -10,6 +10,7 @@ const Client = http.Client;
 const ZigistError = error{
     FormatFailure,
     MissingEnvironmentVariable,
+    ParseFailure,
 };
 
 const Joke = struct {
@@ -51,7 +52,12 @@ pub fn main() !void {
     const body = joke_req.body.?;
     defer alloc.free(body);
 
-    const parsedData = try std.json.parseFromSliceLeaky([]Joke, alloc, body, .{});
+    const parsedData = std.json.parseFromSliceLeaky([]Joke, alloc, body, .{}) catch {
+        log.info("problems while parsing data fetched from getpostman, fetched_data: {s}", .{
+            body,
+        });
+        return ZigistError.ParseFailure;
+    };
     var question = try std.fmt.allocPrint(alloc, "{s}", .{parsedData[0].question});
     var punchline = try std.fmt.allocPrint(alloc, "{s}", .{parsedData[0].punchline});
 
