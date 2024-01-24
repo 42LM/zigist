@@ -14,8 +14,11 @@ const ZigistError = error{
 };
 
 const Joke = struct {
-    question: []const u8,
-    punchline: []const u8,
+    type: []const u8,
+
+    joke: ?[]const u8 = null,
+    setup: ?[]const u8 = null,
+    delivery: ?[]const u8 = null,
 };
 
 // TODO: refactor more
@@ -41,8 +44,8 @@ pub fn main() !void {
     // GET JOKE REQ
     //
     // for reference:
-    //      https://documenter.getpostman.com/view/16443297/TzkyLee7#c55ef73d-6983-4528-97d0-eb62af3c45b6
-    const joke_location = "https://backend-omega-seven.vercel.app/api/getjoke";
+    //      https://jokeapi.dev/#joke-endpoint
+    const joke_location = "https://v2.jokeapi.dev/joke/programming";
 
     // make the connection and set up the request
     // for simplicity fetch is being used for a one shot HTTP request here
@@ -52,21 +55,19 @@ pub fn main() !void {
     const body = joke_req.body.?;
     defer alloc.free(body);
 
-    const parsedData = std.json.parseFromSliceLeaky([]Joke, alloc, body, .{}) catch {
+    const parsedData = std.json.parseFromSliceLeaky(Joke, alloc, body, .{ .ignore_unknown_fields = true }) catch {
         log.info("problems while parsing data fetched from getpostman, fetched_data: {s}", .{
             body,
         });
         return ZigistError.ParseFailure;
     };
-    var question = try std.fmt.allocPrint(alloc, "{s}", .{parsedData[0].question});
-    var punchline = try std.fmt.allocPrint(alloc, "{s}", .{parsedData[0].punchline});
 
-    // split into smaller parts
-    question = try splitStringIntoLines(alloc, question, false);
-    punchline = try splitStringIntoLines(alloc, punchline, true);
+    var payload: []u8 = undefined;
 
-    // UPDATE GIST REQ
-    //
+    // convert epoch unix timestamp to datetime
+    const dateTime = timestamp2DateTime(@intCast(time.timestamp()));
+    const timestamp = try dateTime2String(alloc, dateTime);
+
     // for reference:
     //      https://docs.github.com/en/rest/gists/gists?apiVersion=2022-11-28#update-a-gist
     const update_gist_location = try std.fmt.allocPrint(alloc, "https://api.github.com/gists/{s}", .{gist_id});
@@ -77,33 +78,55 @@ pub fn main() !void {
     var headers = http.Headers{ .allocator = alloc };
     try headers.append("authorization", bearer);
 
-    // convert epoch unix timestamp to datetime
-    const dateTime = timestamp2DateTime(@intCast(time.timestamp()));
-    const timestamp = try dateTime2String(alloc, dateTime);
+    // TODO: builder pattern
+    if (std.mem.eql(u8, parsedData.type, "single")) {
+        const singleJoke = try splitStringIntoLines(alloc, parsedData.joke.?, false);
 
-    const payload = std.fmt.allocPrint(
-        alloc,
-        \\ {{
-        \\ "files":{{
-        \\      "NEWS.md":{{
-        \\          "content":"{s}\n* {s}\n\n> {s}"
-        \\      }}
-        \\ }}
-    ,
-        .{ question, punchline, timestamp },
-    ) catch {
-        return ZigistError.FormatFailure;
-    };
+        payload = std.fmt.allocPrint(
+            alloc,
+            \\ {{
+            \\ "files":{{
+            \\      "NEWS.md":{{
+            \\          "content":"{s}\n\n> {s}"
+            \\      }}
+            \\ }}
+        ,
+            .{ singleJoke, timestamp },
+        ) catch {
+            return ZigistError.FormatFailure;
+        };
 
-    // make the connection and set up the request
-    // for simplicity fetch is being used for a one shot HTTP request here
+        log.info("single joke: {?s}\n", .{parsedData.joke});
+    } else {
+        const jokeSetup = try splitStringIntoLines(alloc, parsedData.setup.?, false);
+        const jokeDelivery = try splitStringIntoLines(alloc, parsedData.delivery.?, true);
+
+        payload = std.fmt.allocPrint(
+            alloc,
+            \\ {{
+            \\ "files":{{
+            \\      "NEWS.md":{{
+            \\          "content":"{s}\n* {s}\n\n> {s}"
+            \\      }}
+            \\ }}
+        ,
+            .{ jokeSetup, jokeDelivery, timestamp },
+        ) catch {
+            return ZigistError.FormatFailure;
+        };
+
+        log.info("setup: {?s}\n", .{parsedData.setup});
+        log.info("delivery: {?s}\n", .{parsedData.delivery});
+    }
+
+    // update gist
     var req = try client.fetch(alloc, http.Client.FetchOptions{ .method = .PATCH, .location = http.Client.FetchOptions.Location{ .url = update_gist_location }, .headers = headers, .payload = http.Client.FetchOptions.Payload{ .string = payload } });
     defer req.deinit();
 
     if (req.status == http.Status.ok) {
         log.info("gist updated successfully: {u}", .{req.status});
     } else {
-        log.info("something went wrong: {u}", .{req.status});
+        log.err("something went wrong: {u}", .{req.status});
     }
 }
 
