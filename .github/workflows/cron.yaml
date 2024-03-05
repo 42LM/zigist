@@ -1,16 +1,16 @@
-name: cron
-on:
-  schedule:
-    - cron: "0 5 * * MON-FRI"
+# name: cron
+# on:
+#   schedule:
+#     - cron: "0 5 * * MON-FRI"
 
-jobs:
-  update-gist:
-    runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      GIST_ID: ${{ vars.GIST_ID }}
-    steps:
-      - uses: actions/checkout@v2
-      - uses: goto-bus-stop/setup-zig@v2
-      - name: Run zigist
-        run: zig build run
+# jobs:
+#   update-gist:
+#     runs-on: ubuntu-latest
+#     env:
+#       GH_TOKEN: ${{ secrets.GH_TOKEN }}
+#       GIST_ID: ${{ vars.GIST_ID }}
+#     steps:
+#       - uses: actions/checkout@v2
+#       - uses: goto-bus-stop/setup-zig@v2
+#       - name: Run zigist
+#         run: zig build run
