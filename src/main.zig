@@ -137,17 +137,16 @@ pub fn main() !void {
     var req = try client.request(.PATCH, update_gist_location_uri, headers, .{});
     defer req.deinit();
 
-    // TODO: Find out why chunked not working properly
-    // req.transfer_encoding = .chunked;
+    req.transfer_encoding = .chunked;
     // req.transfer_encoding = .content_length;
-    req.transfer_encoding = .{ .content_length = payload.len };
+    // req.transfer_encoding = .{ .content_length = payload.len };
 
     try req.start();
 
     try req.writer().writeAll(payload);
+    try req.finish();
 
     try req.wait();
-    try req.finish();
 
     if (req.response.status == http.Status.ok) {
         log.info("gist updated successfully: {u}", .{req.response.status});
