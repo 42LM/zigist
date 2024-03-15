@@ -6,12 +6,14 @@ const time = std.time;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const Client = http.Client;
-// const Options = std.;
+
+const stdout = std.io.getStdOut().writer();
 
 const ZigistError = error{
     FormatFailure,
     MissingEnvironmentVariable,
     ParseFailure,
+    Internal,
 };
 
 const Joke = struct {
@@ -61,8 +63,6 @@ pub fn main() !void {
     const body = joke_req.reader().readAllAlloc(alloc, 8192) catch unreachable;
     defer alloc.free(body);
 
-    std.debug.print("{s}", .{body});
-
     const parsedData = std.json.parseFromSliceLeaky(Joke, alloc, body, .{ .ignore_unknown_fields = true }) catch {
         log.info("problems while parsing data fetched from getpostman, fetched_data: {s}", .{
             body,
@@ -70,7 +70,6 @@ pub fn main() !void {
         return ZigistError.ParseFailure;
     };
 
-    std.debug.print("{any}", .{parsedData});
     var payload: []u8 = undefined;
 
     // convert epoch unix timestamp to datetime
@@ -84,7 +83,12 @@ pub fn main() !void {
 
     // TODO: builder pattern
     if (std.mem.eql(u8, parsedData.type, "single")) {
-        const singleJoke = try splitStringIntoLines(alloc, parsedData.joke.?, false);
+        var singleJoke: []u8 = undefined;
+        if (containsNewLine(parsedData.joke.?)) {
+            singleJoke = try substituteNewLines(alloc, parsedData.joke.?);
+        } else {
+            singleJoke = try splitStringIntoLines(alloc, parsedData.joke.?, false);
+        }
 
         payload = std.fmt.allocPrint(
             alloc,
@@ -122,11 +126,12 @@ pub fn main() !void {
         log.info("setup: {?s}\n", .{parsedData.setup});
         log.info("delivery: {?s}\n", .{parsedData.delivery});
     }
+    // TODO: print/render funcs
+    try stdout.print("\n\npayload: {s}\n\n", .{payload});
 
     // build the bearer string for the authorization header
     const bearer = try std.fmt.allocPrint(alloc, "Bearer {s}", .{token});
-    const payload_len = try std.fmt.allocPrint(alloc, "{d}", .{payload.len});
-    _ = payload_len;
+    // const payload_len = try std.fmt.allocPrint(alloc, "{d}", .{payload.len});
 
     var headers = http.Headers{ .allocator = alloc };
     try headers.append("authorization", bearer);
@@ -148,19 +153,44 @@ pub fn main() !void {
 
     try req.wait();
 
+    try stdout.print("\n\n", .{});
     if (req.response.status == http.Status.ok) {
-        log.info("gist updated successfully: {u}", .{req.response.status});
+        log.info("gist updated successfully: {u}\n", .{req.response.status});
     } else {
-        log.err("something went wrong: {u}", .{req.response.status});
+        log.err("something went wrong: {u}\n", .{req.response.status});
+        log.err("response: reason: {s}\n", .{req.response.reason});
+        return ZigistError.Internal;
     }
 }
 
+// TODO: naming
+fn substituteNewLines(alloc: Allocator, s: []const u8) ![]u8 {
+    var list = std.ArrayList(u8).init(alloc);
+    defer list.deinit();
+
+    for (s) |c| {
+        if (c == '\n') {
+            try list.append('\\');
+            try list.append('n');
+            continue;
+        } else {
+            try list.append(c);
+        }
+    }
+
+    return list.toOwnedSlice();
+}
+
+// TODO: naming
 fn splitStringIntoLines(alloc: Allocator, s: []const u8, punchline: bool) ![]u8 {
     var list = std.ArrayList(u8).init(alloc);
     defer list.deinit();
 
     var count: u32 = 0;
     for (s) |c| {
+        if (c == 34) {
+            try list.append('\\');
+        }
         if (c == 32 and count > 35) {
             try list.append(' ');
             try list.append(' ');
@@ -180,6 +210,19 @@ fn splitStringIntoLines(alloc: Allocator, s: []const u8, punchline: bool) ![]u8 
     return list.toOwnedSlice();
 }
 
+fn containsNewLine(input: []const u8) bool {
+    var containsNewL = false;
+    var index: usize = 0;
+    while (index < input.len) {
+        if (input[index] == '\n') {
+            containsNewL = true;
+            break;
+        }
+        index += 1;
+    }
+    return containsNewL;
+}
+
 fn getENV(name: []const u8) error{MissingEnvironmentVariable}![]const u8 {
     const env = std.os.getenv(name);
 
@@ -188,6 +231,21 @@ fn getENV(name: []const u8) error{MissingEnvironmentVariable}![]const u8 {
     }
 
     return env.?;
+}
+
+test "ok - substituteNewLines" {
+    var alloc = testing.allocator;
+    const joke =
+        \\a string
+        \\with
+        \\new
+        \\line characters
+    ;
+
+    const exp = try substituteNewLines(alloc, joke);
+    defer alloc.free(exp);
+
+    try testing.expect(std.mem.eql(u8, "a string\\nwith\\nnew\\nline characters", exp));
 }
 
 test "ok - splitStringIntoLines punchline" {
