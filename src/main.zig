@@ -6,6 +6,7 @@ const time = std.time;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const Client = http.Client;
+const env = @import("env");
 
 const stdout = std.io.getStdOut().writer();
 
@@ -31,13 +32,12 @@ pub fn main() !void {
     defer arena.deinit();
     const alloc = arena.allocator();
 
-    // get the required env variables
-    //      * token = github token with gist permission
-    //      * gist id = the id of the gist that should be updated
-    const token = getENV("GH_TOKEN") catch |err| {
+    const token = env.get(env.GH_TOKEN) catch |err| {
+        log.err("environment variable GH_TOKEN not found", .{});
         return err;
     };
-    const gist_id = getENV("GIST_ID") catch |err| {
+    const gist_id = env.get(env.GIST_ID) catch |err| {
+        log.err("environment variable GIST_ID not found", .{});
         return err;
     };
 
@@ -226,16 +226,6 @@ fn containsNewLine(input: []const u8) bool {
     return containsNewL;
 }
 
-fn getENV(name: []const u8) error{MissingEnvironmentVariable}![]const u8 {
-    const env = std.os.getenv(name);
-
-    if (env == null) {
-        return ZigistError.MissingEnvironmentVariable;
-    }
-
-    return env.?;
-}
-
 test "ok - substituteNewLines" {
     var alloc = testing.allocator;
     const joke =
@@ -275,17 +265,6 @@ test "ok - splitStringIntoLines question" {
     defer alloc.free(res);
 
     try testing.expect(std.mem.eql(u8, "a really really totally crazy long sentence  \\nthat needs to be split in multiple lines", res));
-}
-
-test "error - env var does not exist" {
-    _ = getENV("") catch |err| {
-        try testing.expect(err == ZigistError.MissingEnvironmentVariable);
-    };
-}
-
-test "ok - env var does exist" {
-    const actual = getENV("GIST_ID");
-    try testing.expect(std.mem.eql(u8, "d0313228583992554c58c626b7df7f2f", try actual));
 }
 
 // date time handling

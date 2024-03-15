@@ -24,6 +24,10 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    exe.addAnonymousModule("env", .{
+        .source_file = .{ .path = "lib/env.zig" },
+    });
+
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
     // step when running `zig build`).
@@ -52,19 +56,20 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 
-    // Creates a step for unit testing. This only builds the test executable
-    // but does not run it.
-    const unit_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/main.zig" },
-        .target = target,
-        .optimize = optimize,
-    });
+    var test_step = b.step("test", "Run unit tests");
 
-    const run_unit_tests = b.addRunArtifact(unit_tests);
+    const test_paths = [_][]const u8{ "lib/env.zig", "src/main.zig" };
+    const test_names = [_][]const u8{ "test env", "test main" };
 
-    // Similar to creating the run step earlier, this exposes a `test` step to
-    // the `zig build --help` menu, providing a way for the user to request
-    // running the unit tests.
-    const test_step = b.step("test", "Run unit tests");
-    test_step.dependOn(&run_unit_tests.step);
+    for (test_paths, 0..) |path, i| {
+        const unit_tests = b.addTest(.{
+            .name = test_names[i],
+            .root_source_file = .{ .path = path },
+            .target = target,
+            .optimize = optimize,
+        });
+
+        const run_unit_tests = b.addRunArtifact(unit_tests);
+        test_step.dependOn(&run_unit_tests.step);
+    }
 }
