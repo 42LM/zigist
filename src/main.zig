@@ -169,6 +169,9 @@ fn substituteNewLines(alloc: Allocator, s: []const u8) ![]u8 {
     defer list.deinit();
 
     for (s) |c| {
+        if (c == 34) {
+            try list.append('\\');
+        }
         if (c == '\n') {
             try list.append('\\');
             try list.append('n');
