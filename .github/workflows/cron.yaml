@@ -1,7 +1,7 @@
 name: cron
 on:
   schedule:
-    - cron: "0 5 * * MON-FRI"
+    - cron: "0 5 * * *"
 
 jobs:
   update-gist:
