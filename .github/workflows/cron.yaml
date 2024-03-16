@@ -1,7 +1,7 @@
 name: cron
 on:
   schedule:
-    - cron: "0 5 * * MON-FRI"
+    - cron: "0 5 * * *"
 
 jobs:
   update-gist:
@@ -10,7 +10,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       GIST_ID: ${{ vars.GIST_ID }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: goto-bus-stop/setup-zig@v2
         with:
           version: 0.11.0

@@ -11,8 +11,8 @@ jobs:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       GIST_ID: ${{ vars.GIST_ID }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: goto-bus-stop/setup-zig@v2
         with:
           version: 0.11.0
-      - run: zig test src/main.zig
+      - run: zig build test --summary all
