@@ -1,12 +1,7 @@
 const std = @import("std");
-// const http = std.http;
-// const log = std.log;
 const testing = std.testing;
-// const time = std.time;
 const Allocator = std.mem.Allocator;
-// const ArrayList = std.ArrayList;
-// const Client = http.Client;
-//
+
 const Payload = error{
     InternalError,
 };

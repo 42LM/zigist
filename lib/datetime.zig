@@ -2,7 +2,7 @@ const std = @import("std");
 const testing = std.testing;
 const Allocator = std.mem.Allocator;
 
-// date time handling
+/// DateTime represents a simple datetime struct.
 pub const DateTime = struct {
     day: u8,
     month: u8,
@@ -60,9 +60,9 @@ test "datetime 2 string" {
 }
 
 test "GMT and localtime" {
-    // Summer, CEST
+    // summer, CEST
     try std.testing.expectEqual(DateTime{ .year = 2020, .month = 8, .day = 28, .hour = 9, .minute = 32, .second = 27 }, timestamp2DateTime(1598607147));
 
-    // Winter, CET
+    // winter, CET
     try std.testing.expectEqual(DateTime{ .year = 2020, .month = 11, .day = 1, .hour = 5, .minute = 6, .second = 7 }, timestamp2DateTime(1604207167));
 }

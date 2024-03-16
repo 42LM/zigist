@@ -3,10 +3,13 @@ const log = std.log;
 const http = std.http;
 const Allocator = std.mem.Allocator;
 
+/// ClientError represents a client error.
 const ClientError = error{
     InternalError,
 };
 
+/// Client wraps a zig std lib http client and
+/// offers convenience methods to do http requests.
 pub const Client = struct {
     c: http.Client,
 
@@ -25,6 +28,7 @@ pub const Client = struct {
         self.c.deinit();
     }
 
+    /// getJoke performs a get request to fetch a joke.
     pub fn getJoke(self: *Client, alloc: Allocator) ![]u8 {
         const joke_location_uri = try std.Uri.parse(joke_location);
         var joke_req = try self.c.request(http.Method.GET, joke_location_uri, std.http.Headers{ .allocator = alloc }, .{});
@@ -34,11 +38,12 @@ pub const Client = struct {
         try joke_req.wait();
         try joke_req.finish();
 
-        // Read the entire response body, but only allow it to allocate 8KB of memory.
+        // read the entire response body, but only allow it to allocate 8KB of memory
         const body = joke_req.reader().readAllAlloc(alloc, 8192) catch unreachable;
         return body;
     }
 
+    /// putGist performs a put request to update a github gist.
     pub fn putGist(self: *Client, alloc: Allocator, gist_id: []const u8, token: []const u8, payload: []u8) !http.Client.Response {
         const gist_location = try std.fmt.allocPrint(alloc, "{s}/{s}", .{ update_gist_location, gist_id });
         defer alloc.free(gist_location);

@@ -1,11 +1,8 @@
 const std = @import("std");
 const http = std.http;
 const log = std.log;
-// const testing = std.testing;
 const time = std.time;
 const Allocator = std.mem.Allocator;
-// const ArrayList = std.ArrayList;
-// const Client = http.Client;
 const datetime = @import("datetime");
 const env = @import("env");
 const zigist_http = @import("http");
@@ -15,18 +12,15 @@ const Joke = payload.Joke;
 const stdout = std.io.getStdOut().writer();
 
 const ZigistError = error{
-    FormatFailure,
-    MissingEnvironmentVariable,
-    ParseFailure,
     Internal,
 };
 
-// TODO: refactor more
 pub fn main() !void {
     // https://ziglang.org/documentation/master/#Choosing-an-Allocator
     // var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     // defer arena.deinit();
     // const alloc = arena.allocator();
+
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const alloc = gpa.allocator();
