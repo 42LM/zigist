@@ -7,14 +7,6 @@ const ClientError = error{
     InternalError,
 };
 
-pub const Joke = struct {
-    type: []const u8,
-
-    joke: ?[]const u8 = null,
-    setup: ?[]const u8 = null,
-    delivery: ?[]const u8 = null,
-};
-
 pub const Client = struct {
     c: http.Client,
 
