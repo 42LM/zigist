@@ -24,6 +24,9 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    exe.addAnonymousModule("http", .{
+        .source_file = .{ .path = "lib/http.zig" },
+    });
     exe.addAnonymousModule("env", .{
         .source_file = .{ .path = "lib/env.zig" },
     });

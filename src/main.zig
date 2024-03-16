@@ -7,6 +7,7 @@ const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const Client = http.Client;
 const env = @import("env");
+const zigist_http = @import("http");
 
 const stdout = std.io.getStdOut().writer();
 
@@ -28,9 +29,12 @@ const Joke = struct {
 // TODO: refactor more
 pub fn main() !void {
     // https://ziglang.org/documentation/master/#Choosing-an-Allocator
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const alloc = arena.allocator();
+    // var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    // defer arena.deinit();
+    // const alloc = arena.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const alloc = gpa.allocator();
 
     const token = env.get(env.GH_TOKEN) catch |err| {
         log.err("environment variable GH_TOKEN not found", .{});
@@ -41,45 +45,27 @@ pub fn main() !void {
         return err;
     };
 
-    var client = Client{ .allocator = alloc };
-    defer client.deinit();
+    var client = zigist_http.Client.init(alloc);
+    defer client.deinit(); // arena
 
-    // GET JOKE REQ
-    //
-    // for reference:
-    //      https://jokeapi.dev/#joke-endpoint
-    const joke_location_uri = try std.Uri.parse("https://v2.jokeapi.dev/joke/programming");
-
-    // make the connection and set up the request
-    // for simplicity fetch is being used for a one shot HTTP request here
-    var joke_req = try client.request(http.Method.GET, joke_location_uri, std.http.Headers{ .allocator = alloc }, .{});
-    defer joke_req.deinit();
-
-    try joke_req.start();
-    try joke_req.wait();
-    try joke_req.finish();
-
-    // Read the entire response body, but only allow it to allocate 8KB of memory.
-    const body = joke_req.reader().readAllAlloc(alloc, 8192) catch unreachable;
-    defer alloc.free(body);
-
-    const parsedData = std.json.parseFromSliceLeaky(Joke, alloc, body, .{ .ignore_unknown_fields = true }) catch {
-        log.info("problems while parsing data fetched from getpostman, fetched_data: {s}", .{
-            body,
-        });
-        return ZigistError.ParseFailure;
+    const body = client.getJoke(alloc) catch |err| {
+        log.err("request could not be finished", .{});
+        return err;
     };
+
+    defer alloc.free(body); // arena
+
+    const joke = try std.json.parseFromSlice(Joke, alloc, body, .{ .ignore_unknown_fields = true });
+    defer joke.deinit(); // arena
+
+    const parsedData = joke.value;
 
     var payload: []u8 = undefined;
 
     // convert epoch unix timestamp to datetime
     const dateTime = timestamp2DateTime(@intCast(time.timestamp()));
     const timestamp = try dateTime2String(alloc, dateTime);
-
-    // for reference:
-    //      https://docs.github.com/en/rest/gists/gists?apiVersion=2022-11-28#update-a-gist
-    const update_gist_location = try std.fmt.allocPrint(alloc, "https://api.github.com/gists/{s}", .{gist_id});
-    const update_gist_location_uri = try std.Uri.parse(update_gist_location);
+    defer alloc.free(timestamp); // arena
 
     // TODO: builder pattern
     if (std.mem.eql(u8, parsedData.type, "single")) {
@@ -89,6 +75,7 @@ pub fn main() !void {
         } else {
             singleJoke = try splitStringIntoLines(alloc, parsedData.joke.?, false);
         }
+        defer alloc.free(singleJoke); // arena
 
         payload = std.fmt.allocPrint(
             alloc,
@@ -108,6 +95,8 @@ pub fn main() !void {
     } else {
         const jokeSetup = try splitStringIntoLines(alloc, parsedData.setup.?, false);
         const jokeDelivery = try splitStringIntoLines(alloc, parsedData.delivery.?, true);
+        defer alloc.free(jokeSetup); // arena
+        defer alloc.free(jokeDelivery); // arena
 
         payload = std.fmt.allocPrint(
             alloc,
@@ -123,42 +112,21 @@ pub fn main() !void {
             return ZigistError.FormatFailure;
         };
 
-        log.info("setup: {?s}\n", .{parsedData.setup});
-        log.info("delivery: {?s}\n", .{parsedData.delivery});
+        log.info("setup: {?s}\n", .{parsedData.setup.?});
+        log.info("delivery: {?s}\n", .{parsedData.delivery.?});
     }
+    defer alloc.free(payload); // arena
     // TODO: print/render funcs
     try stdout.print("\n\npayload: {s}\n\n", .{payload});
 
-    // build the bearer string for the authorization header
-    const bearer = try std.fmt.allocPrint(alloc, "Bearer {s}", .{token});
-    // const payload_len = try std.fmt.allocPrint(alloc, "{d}", .{payload.len});
-
-    var headers = http.Headers{ .allocator = alloc };
-    try headers.append("authorization", bearer);
-    // try headers.append("transfer-encoding", "chunked");
-    // try headers.append("content-length", payload_len);
-
-    // update gist
-    var req = try client.request(.PATCH, update_gist_location_uri, headers, .{});
-    defer req.deinit();
-
-    req.transfer_encoding = .chunked;
-    // req.transfer_encoding = .content_length;
-    // req.transfer_encoding = .{ .content_length = payload.len };
-
-    try req.start();
-
-    try req.writer().writeAll(payload);
-    try req.finish();
-
-    try req.wait();
+    const resp = try client.putGist(alloc, gist_id, token, payload);
 
     try stdout.print("\n\n", .{});
-    if (req.response.status == http.Status.ok) {
-        log.info("gist updated successfully: {u}\n", .{req.response.status});
+    if (resp.status == http.Status.ok) {
+        log.info("gist updated successfully: {u}\n", .{resp.status});
     } else {
-        log.err("something went wrong: {u}\n", .{req.response.status});
-        log.err("response: reason: {s}\n", .{req.response.reason});
+        log.err("something went wrong: {u}\n", .{resp.status});
+        log.err("response: reason: {s}\n", .{resp.reason});
         return ZigistError.Internal;
     }
 }
