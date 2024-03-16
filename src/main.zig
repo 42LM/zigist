@@ -43,7 +43,6 @@ pub fn main() !void {
     };
 
     defer alloc.free(body); // arena
-    std.debug.print("BODY: {s}\n", .{body});
 
     const joke = try std.json.parseFromSlice(Joke, alloc, body, .{ .ignore_unknown_fields = true });
     defer joke.deinit(); // arena
