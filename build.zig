@@ -24,11 +24,14 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    exe.addAnonymousModule("http", .{
-        .source_file = .{ .path = "lib/http.zig" },
+    exe.addAnonymousModule("datetime", .{
+        .source_file = .{ .path = "lib/datetime.zig" },
     });
     exe.addAnonymousModule("env", .{
         .source_file = .{ .path = "lib/env.zig" },
+    });
+    exe.addAnonymousModule("http", .{
+        .source_file = .{ .path = "lib/http.zig" },
     });
 
     // This declares intent for the executable to be installed into the
@@ -61,8 +64,8 @@ pub fn build(b: *std.Build) void {
 
     var test_step = b.step("test", "Run unit tests");
 
-    const test_paths = [_][]const u8{ "lib/env.zig", "src/main.zig" };
-    const test_names = [_][]const u8{ "test env", "test main" };
+    const test_paths = [_][]const u8{ "lib/datetime.zig", "lib/env.zig", "src/main.zig" };
+    const test_names = [_][]const u8{ "test datetime", "test env", "test main" };
 
     for (test_paths, 0..) |path, i| {
         const unit_tests = b.addTest(.{
