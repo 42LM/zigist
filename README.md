@@ -1,3 +1,5 @@
+[![cron](https://github.com/lmllrjr/zigist/actions/workflows/cron.yaml/badge.svg)](https://github.com/lmllrjr/zigist/actions/workflows/cron.yaml)
+
 # zigist
 Nothing fancy here. This is just a simple cron job to update a gist using [Zig ⚡️](https://github.com/ziglang/zig).
 
