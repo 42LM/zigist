@@ -44,34 +44,20 @@ pub fn main() !void {
 
     defer alloc.free(body); // arena
 
-    const joke = try std.json.parseFromSlice(Joke, alloc, body, .{ .ignore_unknown_fields = true });
+    const joke = try std.json.parseFromSlice([]Joke, alloc, body, .{ .ignore_unknown_fields = true });
     defer joke.deinit(); // arena
 
     const parsedData = joke.value;
-
-    var p: []u8 = undefined;
 
     // convert epoch unix timestamp to datetime
     const dateTime = datetime.timestamp2DateTime(@intCast(time.timestamp()));
     const timestamp = try datetime.dateTime2String(alloc, dateTime);
     defer alloc.free(timestamp); // arena
-
-    if (std.mem.eql(u8, parsedData.type, "single")) {
-        p = payload.payloadFromTypeSingle(alloc, parsedData, timestamp) catch |err| {
-            log.err("problem while parsing payload", .{});
-            return err;
-        };
-
-        log.info("single joke: {?s}\n", .{parsedData.joke});
-    } else {
-        p = payload.payloadFromTypeTwopart(alloc, parsedData, timestamp) catch |err| {
-            log.err("problem by parsing payload", .{});
-            return err;
-        };
-
-        log.info("setup: {?s}\n", .{parsedData.setup.?});
-        log.info("delivery: {?s}\n", .{parsedData.delivery.?});
-    }
+    //
+    const p = payload.payloadFromTypeTwopart(alloc, parsedData, timestamp) catch |err| {
+        log.err("problem while parsing payload", .{});
+        return err;
+    };
     defer alloc.free(p); // arena
 
     // TODO: print/render funcs

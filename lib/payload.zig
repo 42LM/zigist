@@ -7,45 +7,18 @@ const Payload = error{
 };
 
 pub const Joke = struct {
+    id: i64,
     type: []const u8,
 
-    joke: ?[]const u8 = null,
-    setup: ?[]const u8 = null,
-    delivery: ?[]const u8 = null,
+    setup: []const u8,
+    punchline: []const u8,
 };
 
-pub fn payloadFromTypeSingle(alloc: Allocator, parsedData: Joke, timestamp: []u8) ![]u8 {
-    var singleJoke: []u8 = undefined;
-
-    if (containsNewLine(parsedData.joke.?)) {
-        singleJoke = try substituteNewLines(alloc, parsedData.joke.?);
-    } else {
-        singleJoke = try splitStringIntoLines(alloc, parsedData.joke.?, false);
-    }
-    defer alloc.free(singleJoke); // arena
-
-    const payload = std.fmt.allocPrint(
-        alloc,
-        \\ {{
-        \\ "files":{{
-        \\      "NEWS.md":{{
-        \\          "content":"{s}\n\n> {s}"
-        \\      }}
-        \\ }}
-    ,
-        .{ singleJoke, timestamp },
-    ) catch {
-        return Payload.InternalError;
-    };
-
-    return payload;
-}
-
-pub fn payloadFromTypeTwopart(alloc: Allocator, parsedData: Joke, timestamp: []u8) ![]u8 {
-    const jokeSetup = try splitStringIntoLines(alloc, parsedData.setup.?, false);
-    const jokeDelivery = try splitStringIntoLines(alloc, parsedData.delivery.?, true);
+pub fn payloadFromTypeTwopart(alloc: Allocator, parsedData: []Joke, timestamp: []u8) ![]u8 {
+    const jokeSetup = try splitStringIntoLines(alloc, parsedData[0].setup, false);
+    const jokePunchline = try splitStringIntoLines(alloc, parsedData[0].punchline, true);
     defer alloc.free(jokeSetup); // arena
-    defer alloc.free(jokeDelivery); // arena
+    defer alloc.free(jokePunchline); // arena
 
     const payload = std.fmt.allocPrint(
         alloc,
@@ -56,33 +29,12 @@ pub fn payloadFromTypeTwopart(alloc: Allocator, parsedData: Joke, timestamp: []u
         \\      }}
         \\ }}
     ,
-        .{ jokeSetup, jokeDelivery, timestamp },
+        .{ jokeSetup, jokePunchline, timestamp },
     ) catch {
         return Payload.InternalError;
     };
 
     return payload;
-}
-
-// TODO: naming
-fn substituteNewLines(alloc: Allocator, s: []const u8) ![]u8 {
-    var list = std.ArrayList(u8).init(alloc);
-    defer list.deinit();
-
-    for (s) |c| {
-        if (c == 34) {
-            try list.append('\\');
-        }
-        if (c == '\n') {
-            try list.append('\\');
-            try list.append('n');
-            continue;
-        } else {
-            try list.append(c);
-        }
-    }
-
-    return list.toOwnedSlice();
 }
 
 // TODO: naming
@@ -110,7 +62,6 @@ fn splitStringIntoLines(alloc: Allocator, s: []const u8, punchline: bool) ![]u8 
             count += 1;
         }
     }
-
     return list.toOwnedSlice();
 }
 
@@ -125,21 +76,6 @@ fn containsNewLine(input: []const u8) bool {
         index += 1;
     }
     return containsNewL;
-}
-
-test "ok - substituteNewLines" {
-    var alloc = testing.allocator;
-    const joke =
-        \\a string
-        \\with
-        \\new
-        \\line characters
-    ;
-
-    const exp = try substituteNewLines(alloc, joke);
-    defer alloc.free(exp);
-
-    try testing.expect(std.mem.eql(u8, "a string\\nwith\\nnew\\nline characters", exp));
 }
 
 test "ok - splitStringIntoLines punchline" {
