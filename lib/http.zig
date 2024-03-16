@@ -14,8 +14,8 @@ pub const Client = struct {
     c: http.Client,
 
     // for reference:
-    //      https://jokeapi.dev/#joke-endpoint
-    const joke_location = "https://v2.jokeapi.dev/joke/programming";
+    //      https://github.com/15Dkatz/official_joke_api
+    const joke_location = "https://official-joke-api.appspot.com/jokes/programming/random";
     // for reference:
     //      https://docs.github.com/en/rest/gists/gists?apiVersion=2022-11-28#update-a-gist
     const update_gist_location = "https://api.github.com/gists";
