@@ -1,0 +1,15 @@
+name: 'zigist'
+description: 'Update gist with random dev joke'
+inputs:
+  gh-token:
+    description: 'Github token'
+    required: true
+  gist-id:
+    description: 'Gist id'
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.gh-token }}
+    - ${{ inputs.gist-id }}

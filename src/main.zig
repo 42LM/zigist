@@ -25,14 +25,21 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const alloc = gpa.allocator();
 
-    const token = env.get(env.GH_TOKEN) catch |err| {
-        log.err("environment variable GH_TOKEN not found", .{});
-        return err;
-    };
-    const gist_id = env.get(env.GIST_ID) catch |err| {
-        log.err("environment variable GIST_ID not found", .{});
-        return err;
-    };
+    var token: []const u8 = undefined;
+    var gist_id: []const u8 = undefined;
+    if (std.os.argv.len > 1) {
+        token = std.mem.sliceTo(std.os.argv[1], 0);
+        gist_id = std.mem.sliceTo(std.os.argv[2], 0);
+    } else {
+        token = env.get(env.GH_TOKEN) catch |err| {
+            log.err("environment variable GH_TOKEN not found", .{});
+            return err;
+        };
+        gist_id = env.get(env.GIST_ID) catch |err| {
+            log.err("environment variable GIST_ID not found", .{});
+            return err;
+        };
+    }
 
     var client = zigist_http.Client.init(alloc);
     defer client.deinit(); // arena
