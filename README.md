@@ -1,7 +1,33 @@
 [![cron](https://github.com/lmllrjr/zigist/actions/workflows/cron.yaml/badge.svg)](https://github.com/lmllrjr/zigist/actions/workflows/cron.yaml)
 
-# zigist
-Nothing fancy here. This is just a simple cron job to update a gist using [Zig ⚡️](https://github.com/ziglang/zig).
+# zigist - update a gist with a random dev joke docker action
+Nothing fancy here. This is just a simple github action to update a gist with a random dev joke using [Zig ⚡️](https://github.com/ziglang/zig).
+
+## Inputs
+### `gh-token`
+**Required** The github token ([Personal Access Token](https://docs.github.com/en/enterprise-server@3.9/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)).
+
+### `gist-id`
+**Required** The id of the gist that should be updated.
+
+## Example usage
+Setup a secret in the repository you want to use this action in.
+
+```yaml
+on: [push]
+
+jobs:
+  zigist-update-gist:
+    runs-on: ubuntu-latest
+    name: A job update a gist with a random dev joke
+    steps:
+      - name: Update gist action step
+        id: zigist
+        uses: lmllrjr/zigist@v1
+        with:
+          gh-token: ${{ secrets.GH_TOKEN }}
+          gist-id: 'd0313228583992554c58c626b7df7f2f'
+```
 
 ## Local environment setup
 The following two environment variables need to be set up:
@@ -13,6 +39,16 @@ Copy `.envrc.example` to `.envrc` and edit values. Load this environment into yo
 cp .envrc.example .envrc
 ```
 
+### Run regulat
 ```sh
 zig build run
+```
+
+### Docker
+```sh
+docker build -t ziglang/static .
+```
+
+```sh
+docker run --name zigist ziglang/static $GH_TOKEN $GIST_ID
 ```

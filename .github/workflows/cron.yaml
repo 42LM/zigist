@@ -6,13 +6,11 @@ on:
 jobs:
   update-gist:
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      GIST_ID: ${{ vars.GIST_ID }}
+    name: A job update a gist with a random dev joke
     steps:
-      - uses: actions/checkout@v4
-      - uses: goto-bus-stop/setup-zig@v2
+      - name: Update gist action step
+        id: zigist
+        uses: lmllrjr/zigist@v1
         with:
-          version: 0.11.0
-      - name: Run zigist
-        run: zig build run
+          gh-token: ${{ secrets.GH_TOKEN }}
+          gist-id: 'd0313228583992554c58c626b7df7f2f'

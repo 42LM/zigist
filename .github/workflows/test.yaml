@@ -16,14 +16,3 @@ jobs:
         with:
           version: 0.11.0
       - run: zig build test --summary all
-
-  test-github-action:
-    runs-on: ubuntu-latest
-    name: A job to say hello
-    steps:
-      - name: Update gist action step
-        id: zigist
-        uses: lmllrjr/zigist@v1
-        with:
-          gh-token: ${{ secrets.GH_TOKEN }}
-          gist-id: 'd0313228583992554c58c626b7df7f2f'
