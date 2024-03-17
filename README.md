@@ -12,14 +12,16 @@ with:
 ```
 
 ## Inputs
-### `gh-token` (🚨 required)
-The GitHub [Personal Access Token](https://docs.github.com/en/enterprise-server@3.9/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
+|Input Name|Description|Required|
+| --- | --- | :---: |
+|`gh-token`|The GitHub [Personal Access Token](https://docs.github.com/en/enterprise-server@3.9/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) with *gist* access|☑️|
+|`gist-id`|The GitHub public gist id|☑️|
+
 
 > [!IMPORTANT]
-> ⚠️ The GitHub Token needs to be placed as a repository secret in the repository that uses this action:
+> #### `gh-token`: The GitHub Token needs to be created as a repository secret in the repository that uses this action.[^1]
+> #### `gist-id`: The GitHub gist needs to be created with the file name `NEWS.md`.[^2]
 
-### `gist-id` (🚨 required)
-The id of the gist that should be updated.
 
 ## Example usage
 Setup a secret in the repository you want to use this action in.
@@ -37,7 +39,7 @@ jobs:
         uses: lmllrjr/zigist@v1
         with:
           gh-token: ${{ secrets.GH_TOKEN }}
-          gist-id: 'd0313228583992554c58c626b7df7f2f'
+          gist-id: d0313228583992554c58c626b7df7f2f
 ```
 
 ## Local environment setup
@@ -50,16 +52,23 @@ Copy `.envrc.example` to `.envrc` and edit values. Load this environment into yo
 cp .envrc.example .envrc
 ```
 
-### Run regulat
+### Zig
 ```sh
 zig build run
 ```
 
+```sh
+zig build test --summary all
+```
+
 ### Docker
 ```sh
-docker build -t ziglang/static .
+docker build -t ziglang/static-v0.11.0 .
 ```
 
 ```sh
-docker run --name zigist ziglang/static $GH_TOKEN $GIST_ID
+docker run --name zigist ziglang/static-v0.11.0 $GH_TOKEN $GIST_ID
 ```
+
+[^1]: Place repository secret: ![Screenshot 2024-03-17 at 23 54 25](https://github.com/lmllrjr/zigist/assets/93522910/667ad7a8-bc4e-4115-85bf-61945095f1dc)
+[^2]: Create github gist with filename `NEWS.md`: ![Screenshot 2024-03-17 at 23 30 13](https://github.com/lmllrjr/zigist/assets/93522910/e0b614d2-131f-480e-9203-0c08f1b77a7e)
