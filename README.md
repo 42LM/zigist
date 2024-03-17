@@ -1,4 +1,4 @@
-[![cron](https://github.com/lmllrjr/zigist/actions/workflows/cron.yaml/badge.svg)](https://github.com/lmllrjr/zigist/actions/workflows/cron.yaml)
+[![test](https://github.com/lmllrjr/zigist/actions/workflows/test.yaml/badge.svg)](https://github.com/lmllrjr/zigist/actions/workflows/test.yaml) [![cron](https://github.com/lmllrjr/zigist/actions/workflows/cron.yaml/badge.svg)](https://github.com/lmllrjr/zigist/actions/workflows/cron.yaml)
 
 # zigist - update a gist with a random dev joke docker action
 Nothing fancy here. This is just a simple github action to update a gist with a random dev joke using [Zig ⚡️](https://github.com/ziglang/zig).
