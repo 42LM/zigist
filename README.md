@@ -3,14 +3,18 @@
 # zigist - update a gist with a random dev joke docker action
 Nothing fancy here. This is just a simple github action to update a gist with a random dev joke using [Zig ⚡️](https://github.com/ziglang/zig).
 
-## Inputs
-### `gh-token`
-**Required** The github token ([Personal Access Token](https://docs.github.com/en/enterprise-server@3.9/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)).
+## Consider trying it out?
+### Inputs
+#### `gh-token` (🚨 required)
+The GitHub [Personal Access Token](https://docs.github.com/en/enterprise-server@3.9/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
 
-### `gist-id`
-**Required** The id of the gist that should be updated.
+> [!IMPORTANT]
+> ⚠️ The GitHub Token needs to be placed as a repository secret in the repository that uses this action:
 
-## Example usage
+#### `gist-id` (🚨 required)
+The id of the gist that should be updated.
+
+### Example usage
 Setup a secret in the repository you want to use this action in.
 
 ```yaml
