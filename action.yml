@@ -1,7 +1,8 @@
 name: 'zigist'
 description: 'Update gist with random dev joke'
-icon: book-open
-color: yellow
+branding:
+  icon: book-open
+  color: yellow
 inputs:
   gh-token:
     description: 'Github token'
