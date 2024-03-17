@@ -17,30 +17,12 @@ with:
 |`gh-token`|The GitHub [Personal Access Token](https://docs.github.com/en/enterprise-server@3.9/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) with *gist* access|☑️|
 |`gist-id`|The GitHub public gist id|☑️|
 
-
 > [!IMPORTANT]
 > #### `gh-token`: The GitHub Token needs to be created as a repository secret in the repository that uses this action.[^1]
 > #### `gist-id`: The GitHub gist needs to be created with the file name `NEWS.md`.[^2]
 
-
 ## Example usage
-Setup a secret in the repository you want to use this action in.
-
-```yaml
-on: [push]
-
-jobs:
-  zigist-update-gist:
-    runs-on: ubuntu-latest
-    name: A job update a gist with a random dev joke
-    steps:
-      - name: Update gist action step
-        id: zigist
-        uses: lmllrjr/zigist@v1
-        with:
-          gh-token: ${{ secrets.GH_TOKEN }}
-          gist-id: d0313228583992554c58c626b7df7f2f
-```
+https://github.com/lmllrjr/zigist/blob/d37412dd9250a000898ba2ba1313edefadf19204/.github/workflows/cron.yaml#L1-L16
 
 ## Local environment setup
 The following two environment variables need to be set up:
