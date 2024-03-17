@@ -28,7 +28,9 @@ test "error - env var does not exist" {
     };
 }
 
+// TODO: find a way to make this independent of hard coded gist id
+// std.os.setenv?
 test "ok - env var does exist" {
     const actual = get("GIST_ID");
-    try testing.expect(std.mem.eql(u8, "d0313228583992554c58c626b7df7f2f", try actual));
+    try testing.expect(std.mem.eql(u8, "e35b7dfc8ec2c958a7f8f0c9938ffd60", try actual));
 }
