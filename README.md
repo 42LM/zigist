@@ -11,6 +11,13 @@ with:
   gist-id: from_gist_url
 ```
 
+> [!TIP]
+> Pin the gist in your profile:  
+> <br>
+> <img width="466" alt="Screenshot 2024-03-18 at 01 00 19" src="https://github.com/lmllrjr/zigist/assets/93522910/a5ea6d0e-fdd0-442d-9375-5b9d6876d89b">
+> <br>
+> [See it in ~action~ the wild](https://github.com/lmllrjr)
+
 ## Inputs
 |Input Name|Description|Required|
 | --- | --- | :---: |
