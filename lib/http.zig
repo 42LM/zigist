@@ -31,20 +31,25 @@ pub const Client = struct {
     /// getJoke performs a get request to fetch a joke.
     pub fn getJoke(self: *Client, alloc: Allocator) ![]u8 {
         const joke_location_uri = try std.Uri.parse(joke_location);
-        var joke_req = try self.c.request(http.Method.GET, joke_location_uri, std.http.Headers{ .allocator = alloc }, .{});
-        defer joke_req.deinit();
 
-        try joke_req.start();
-        try joke_req.wait();
-        try joke_req.finish();
+        var list = std.ArrayList(u8).init(alloc);
+        defer list.deinit();
 
-        // read the entire response body, but only allow it to allocate 8KB of memory
-        const body = joke_req.reader().readAllAlloc(alloc, 8192) catch unreachable;
+        const fetch_options = http.Client.FetchOptions{
+            .location = .{ .uri = joke_location_uri },
+            .response_storage = .{
+                .dynamic = &list,
+            },
+        };
+        _ = try self.c.fetch(fetch_options);
+
+        const body = list.toOwnedSlice();
+
         return body;
     }
 
     /// putGist performs a put request to update a github gist.
-    pub fn putGist(self: *Client, alloc: Allocator, gist_id: []const u8, token: []const u8, payload: []u8) !http.Client.Response {
+    pub fn putGist(self: *Client, alloc: Allocator, gist_id: []const u8, token: []const u8, payload: []u8) !http.Status {
         const gist_location = try std.fmt.allocPrint(alloc, "{s}/{s}", .{ update_gist_location, gist_id });
         defer alloc.free(gist_location);
 
@@ -52,24 +57,19 @@ pub const Client = struct {
         const bearer = try std.fmt.allocPrint(alloc, "Bearer {s}", .{token});
         defer alloc.free(bearer);
 
-        var headers = http.Headers{ .allocator = alloc };
-        try headers.append("authorization", bearer);
-        try headers.append("transfer-encoding", "chunked");
-        defer headers.deinit();
+        const headers = http.Client.Request.Headers{
+            .authorization = .{ .override = bearer },
+        };
 
-        var req = try self.c.request(.PATCH, update_gist_location_uri, headers, .{});
-        defer req.deinit();
+        const fetch_options = http.Client.FetchOptions{
+            .method = .PATCH,
+            .location = .{ .uri = update_gist_location_uri },
+            .headers = headers,
+            .payload = payload,
+        };
+        const res = try self.c.fetch(fetch_options);
 
-        req.transfer_encoding = .chunked;
-
-        try req.start();
-
-        try req.writer().writeAll(payload);
-        try req.finish();
-
-        try req.wait();
-
-        return req.response;
+        return res.status;
     }
 };
 
