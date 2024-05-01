@@ -73,11 +73,10 @@ pub fn main() !void {
     const resp = try client.putGist(alloc, gist_id, token, p);
 
     try stdout.print("\n\n", .{});
-    if (resp.status == http.Status.ok) {
-        log.info("gist updated successfully: {u}\n", .{resp.status});
+    if (resp == http.Status.ok) {
+        log.info("gist updated successfully: {u}\n", .{resp});
     } else {
-        log.err("something went wrong: {u}\n", .{resp.status});
-        log.err("response: reason: {s}\n", .{resp.reason});
+        log.err("something went wrong: {u}\n", .{resp});
         return ZigistError.Internal;
     }
 }

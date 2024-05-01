@@ -6,23 +6,15 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "zigist",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
 
-    exe.addAnonymousModule("datetime", .{
-        .source_file = .{ .path = "lib/datetime.zig" },
-    });
-    exe.addAnonymousModule("env", .{
-        .source_file = .{ .path = "lib/env.zig" },
-    });
-    exe.addAnonymousModule("http", .{
-        .source_file = .{ .path = "lib/http.zig" },
-    });
-    exe.addAnonymousModule("payload", .{
-        .source_file = .{ .path = "lib/payload.zig" },
-    });
+    exe.root_module.addAnonymousImport("datetime", .{ .root_source_file = .{ .path = b.pathFromRoot("lib/datetime.zig") } });
+    exe.root_module.addAnonymousImport("env", .{ .root_source_file = .{ .path = b.pathFromRoot("lib/env.zig") } });
+    exe.root_module.addAnonymousImport("http", .{ .root_source_file = .{ .path = b.pathFromRoot("lib/http.zig") } });
+    exe.root_module.addAnonymousImport("payload", .{ .root_source_file = .{ .path = b.pathFromRoot("lib/payload.zig") } });
 
     b.installArtifact(exe);
     const run_cmd = b.addRunArtifact(exe);
@@ -31,6 +23,7 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
+
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 
