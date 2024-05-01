@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const exe = b.addExecutable(.{
-        .name = "zigist-v0.12",
+        .name = "zigist",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,

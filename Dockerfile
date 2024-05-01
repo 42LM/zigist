@@ -1,4 +1,4 @@
-# TODO: When tag with v0.11.0 exists use official zig docker image
+# TODO: When tag with v0.12.0 exists use official zig docker image
 # FROM ziglang/static-base:llvm15-aarch64-3 as ziggy
 # ENTRYPOINT ./deps/local/bin/zig version
 
