@@ -8,7 +8,7 @@ Nothing fancy here. This is just a simple github action to update a gist with a 
 uses: lmllrjr/zigist@v1
 with:
   gh-token: ${{ secrets.GH_TOKEN }}
-  gist-id: from_gist_url
+  gist-id: e35b7dfc8ec2c958a7f8f0c9938ffd60
 ```
 
 > [!TIP]
