@@ -13,7 +13,7 @@ pub const GIST_ID = "GIST_ID";
 
 /// get fetches an environment variable by given name.
 pub fn get(name: []const u8) error{NotFound}![]const u8 {
-    const env = std.os.getenv(name);
+    const env = std.posix.getenv(name);
 
     if (env == null) {
         return EnvError.NotFound;
