@@ -5,7 +5,7 @@ Nothing fancy here. This is just a simple github action to update a gist with a 
 
 ## Quick start
 ```yaml
-uses: lmllrjr/zigist@v1
+uses: 42LM/zigist@v1
 with:
   gh-token: ${{ secrets.GH_TOKEN }}
   gist-id: e35b7dfc8ec2c958a7f8f0c9938ffd60

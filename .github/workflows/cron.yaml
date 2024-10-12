@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Update gist action step
         id: zigist
-        uses: lmllrjr/zigist@v1
+        uses: 42LM/zigist@v1
         with:
           gh-token: ${{ secrets.GH_TOKEN }}
           gist-id: ${{ vars.GIST_ID }}
