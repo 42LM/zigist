@@ -1,5 +1,5 @@
 # Zigist - Update a gist with a random dev joke
-[![test](https://github.com/lmllrjr/zigist/actions/workflows/test.yaml/badge.svg)](https://github.com/lmllrjr/zigist/actions/workflows/test.yaml) [![cron](https://github.com/lmllrjr/zigist/actions/workflows/cron.yaml/badge.svg)](https://github.com/lmllrjr/zigist/actions/workflows/cron.yaml)
+[![test](https://github.com/42LM/zigist/actions/workflows/test.yaml/badge.svg)](https://github.com/42LM/zigist/actions/workflows/test.yaml) [![cron](https://github.com/42LM/zigist/actions/workflows/cron.yaml/badge.svg)](https://github.com/42LM/zigist/actions/workflows/cron.yaml)
 
 Nothing fancy here. This is just a simple github action to update a gist with a random dev joke using [Zig ⚡️](https://github.com/ziglang/zig).
 
@@ -14,9 +14,9 @@ with:
 > [!TIP]
 > Pin the gist in your profile:  
 > <br>
-> <img width="466" alt="Screenshot 2024-03-18 at 01 00 19" src="https://github.com/lmllrjr/zigist/assets/93522910/a5ea6d0e-fdd0-442d-9375-5b9d6876d89b">
+> <img width="466" alt="Screenshot 2024-03-18 at 01 00 19" src="https://github.com/42LM/zigist/assets/93522910/a5ea6d0e-fdd0-442d-9375-5b9d6876d89b">
 > <br>
-> [See it in ~action~ the wild](https://github.com/lmllrjr)
+> [See it in ~action~ the wild](https://github.com/42LM)
 
 ## Inputs
 |Input Name|Description|Required|
@@ -29,7 +29,7 @@ with:
 > #### `gist-id`: The GitHub gist needs to be created with the file name `NEWS.md`.[^2]
 
 ## Example usage
-https://github.com/lmllrjr/zigist/blob/d37412dd9250a000898ba2ba1313edefadf19204/.github/workflows/cron.yaml#L1-L16
+https://github.com/42LM/zigist/blob/d37412dd9250a000898ba2ba1313edefadf19204/.github/workflows/cron.yaml#L1-L16
 
 ## Local environment setup
 The following two environment variables need to be set up:
@@ -59,5 +59,5 @@ docker build -t ziglang/static-v0.11.0 .
 docker run --name zigist ziglang/static-v0.11.0 $GH_TOKEN $GIST_ID
 ```
 
-[^1]: Place repository secret: ![Screenshot 2024-03-17 at 23 54 25](https://github.com/lmllrjr/zigist/assets/93522910/667ad7a8-bc4e-4115-85bf-61945095f1dc)
-[^2]: Create github gist with filename `NEWS.md`: ![Screenshot 2024-03-17 at 23 30 13](https://github.com/lmllrjr/zigist/assets/93522910/e0b614d2-131f-480e-9203-0c08f1b77a7e)
+[^1]: Place repository secret: ![Screenshot 2024-03-17 at 23 54 25](https://github.com/42LM/zigist/assets/93522910/667ad7a8-bc4e-4115-85bf-61945095f1dc)
+[^2]: Create github gist with filename `NEWS.md`: ![Screenshot 2024-03-17 at 23 30 13](https://github.com/42LM/zigist/assets/93522910/e0b614d2-131f-480e-9203-0c08f1b77a7e)
