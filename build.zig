@@ -11,10 +11,10 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    exe.root_module.addAnonymousImport("datetime", .{ .root_source_file = .{ .path = b.pathFromRoot("lib/datetime.zig") } });
-    exe.root_module.addAnonymousImport("env", .{ .root_source_file = .{ .path = b.pathFromRoot("lib/env.zig") } });
-    exe.root_module.addAnonymousImport("http", .{ .root_source_file = .{ .path = b.pathFromRoot("lib/http.zig") } });
-    exe.root_module.addAnonymousImport("payload", .{ .root_source_file = .{ .path = b.pathFromRoot("lib/payload.zig") } });
+    exe.root_module.addAnonymousImport("datetime", .{ .root_source_file = .{ .src_path = .{ .sub_path = b.pathFromRoot("lib/datetime.zig"), .owner = b } } });
+    exe.root_module.addAnonymousImport("env", .{ .root_source_file = .{ .src_path = .{ .sub_path = b.pathFromRoot("lib/env.zig"), .owner = b } } });
+    exe.root_module.addAnonymousImport("http", .{ .root_source_file = .{ .src_path = .{ .sub_path = b.pathFromRoot("lib/http.zig"), .owner = b } } });
+    exe.root_module.addAnonymousImport("payload", .{ .root_source_file = .{ .src_path = .{ .sub_path = b.pathFromRoot("lib/payload.zig"), .owner = b } } });
 
     b.installArtifact(exe);
     const run_cmd = b.addRunArtifact(exe);
@@ -34,7 +34,7 @@ pub fn build(b: *std.Build) void {
     for (test_paths, 0..) |path, i| {
         const unit_tests = b.addTest(.{
             .name = test_names[i],
-            .root_source_file = .{ .path = path },
+            .root_source_file = .{ .src_path = .{ .sub_path = path, .owner = b } },
             .target = target,
             .optimize = optimize,
         });
