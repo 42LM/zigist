@@ -21,6 +21,6 @@ COPY . /zigist
 WORKDIR /zigist
 RUN zig build
 
+# github actions always start in this dir
 # WORKDIR /github/workspace
-# ENTRYPOINT ["../../zigist/zig-out/bin/zigist"]
-ENTRYPOINT ["zig-out/bin/zigist"]
+ENTRYPOINT ["../../zigist/zig-out/bin/zigist"]
