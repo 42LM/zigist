@@ -29,7 +29,7 @@ with:
 > #### `gist-id`: The GitHub gist needs to be created with the file name `NEWS.md`.[^2]
 
 ## Example usage
-https://github.com/42LM/zigist/blob/d37412dd9250a000898ba2ba1313edefadf19204/.github/workflows/cron.yaml#L1-L16
+https://github.com/42LM/zigist/blob/772cf37d3bf22d435f5aa8459b65a6a150d69e7f/.github/workflows/cron.yaml#L1-L16
 
 ## Local environment setup
 The following two environment variables need to be set up:
