@@ -3,7 +3,7 @@
 # ENTRYPOINT ./deps/local/bin/zig version
 
 FROM jedisct1/minisign:latest AS minisign
-FROM alpine:3.10 AS build-zig
+FROM alpine:3.10
 
 RUN apk update
 RUN apk add curl
@@ -21,9 +21,6 @@ COPY . /zigist
 WORKDIR /zigist
 RUN zig build
 
-FROM alpine:3.10
-
-COPY --from=build-zig /zig-linux-x86_64-0.13.0 /zig-linux-x86_64-0.13.0
-COPY --from=build-zig /zigist /zigist
-WORKDIR /github/workspace
-ENTRYPOINT ["../../zigist/zig-out/bin/zigist"]
+# WORKDIR /github/workspace
+# ENTRYPOINT ["../../zigist/zig-out/bin/zigist"]
+ENTRYPOINT ["zig-out/bin/zigist"]
