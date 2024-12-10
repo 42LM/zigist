@@ -52,11 +52,11 @@ zig build test --summary all
 
 ### Docker
 ```sh
-docker build -t ziglang/static-v0.11.0 .
+docker build -t ziglang/static-v0.13.0 .
 ```
 
 ```sh
-docker run --name zigist ziglang/static-v0.11.0 $GH_TOKEN $GIST_ID
+docker run --name zigist ziglang/static-v0.13.0 $GH_TOKEN $GIST_ID
 ```
 
 [^1]: Place repository secret: ![Screenshot 2024-03-17 at 23 54 25](https://github.com/42LM/zigist/assets/93522910/667ad7a8-bc4e-4115-85bf-61945095f1dc)
