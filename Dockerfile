@@ -9,7 +9,7 @@ RUN apk update
 RUN apk add curl
 
 COPY --from=minisign /usr/local/bin/minisign /usr/local/bin/minisign
-COPY ./zig-linux-x86_64-0.13.0.tar.xz.minisig .
+RUN curl https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz.minisig -O
 
 RUN curl https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz -O
 # Verify the signature from zig tarball before installing/using
