@@ -15,10 +15,10 @@ pub const Joke = struct {
 };
 
 pub fn payloadFromTypeTwopart(alloc: Allocator, parsedData: []Joke, timestamp: []u8) ![]u8 {
-    const jokeSetup = try splitStringIntoLines(alloc, parsedData[0].setup, false);
-    const jokePunchline = try splitStringIntoLines(alloc, parsedData[0].punchline, true);
-    defer alloc.free(jokeSetup); // arena
-    defer alloc.free(jokePunchline); // arena
+    const joke_setup = try splitStringIntoLines(alloc, parsedData[0].setup, false);
+    const joke_punchline = try splitStringIntoLines(alloc, parsedData[0].punchline, true);
+    defer alloc.free(joke_setup); // arena
+    defer alloc.free(joke_punchline); // arena
 
     const payload = std.fmt.allocPrint(
         alloc,
@@ -29,7 +29,7 @@ pub fn payloadFromTypeTwopart(alloc: Allocator, parsedData: []Joke, timestamp: [
         \\      }}
         \\ }}
     ,
-        .{ jokeSetup, jokePunchline, timestamp },
+        .{ joke_setup, joke_punchline, timestamp },
     ) catch {
         return Payload.InternalError;
     };
@@ -66,16 +66,16 @@ fn splitStringIntoLines(alloc: Allocator, s: []const u8, punchline: bool) ![]u8 
 }
 
 fn containsNewLine(input: []const u8) bool {
-    var containsNewL = false;
+    var contains_new_line = false;
     var index: usize = 0;
     while (index < input.len) {
         if (input[index] == '\n') {
-            containsNewL = true;
+            contains_new_line = true;
             break;
         }
         index += 1;
     }
-    return containsNewL;
+    return contains_new_line;
 }
 
 test "ok - splitStringIntoLines punchline" {
