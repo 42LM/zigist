@@ -12,7 +12,5 @@ jobs:
         id: zigist
         uses: 42LM/zigist@v1
         with:
-          build-args: |
-            ZIGVER=0.13.0
           gh-token: ${{ secrets.GH_TOKEN }}
           gist-id: ${{ vars.GIST_ID }}
