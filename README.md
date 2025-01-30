@@ -52,7 +52,7 @@ zig build test --summary all
 
 ### Docker
 ```sh
-docker build -t zig0.13.0 . --build-arg
+docker build -t zig0.13.0 .
 ```
 
 ```sh
