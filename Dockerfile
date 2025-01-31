@@ -24,4 +24,6 @@ RUN zig build
 FROM alpine:3.10
 
 COPY --from=builder /zigist/zig-out/bin/zigist /github/workspace/
-ENTRYPOINT ["/github/workspace/zigist"]
+
+WORKDIR /github/workspace
+ENTRYPOINT ["./zigist"]
