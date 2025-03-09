@@ -5,7 +5,7 @@ FROM alpine:3.10 AS builder
 RUN apk update
 RUN apk add curl
 
-ARG ZIGVER=0.13.0
+ARG ZIGVER=0.14.0
 
 COPY --from=minisign /usr/local/bin/minisign /usr/local/bin/minisign
 RUN curl https://ziglang.org/download/$ZIGVER/zig-linux-x86_64-$ZIGVER.tar.xz.minisig -O
