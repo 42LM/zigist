@@ -12,7 +12,7 @@ jobs:
       GIST_ID: ${{ vars.GIST_ID }}
     steps:
       - uses: actions/checkout@v4
-      - uses: goto-bus-stop/setup-zig@v2
+      - uses: mlugg/setup-zig@v2
         with:
           version: 0.14.0
       - run: zig build test --summary all
