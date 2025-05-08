@@ -25,5 +25,4 @@ FROM alpine:3.10
 
 COPY --from=builder /zigist /zigist
 
-WORKDIR /github/workspace
-ENTRYPOINT ["../../zigist/zig-out/bin/zigist"]
+ENTRYPOINT ["/zigist/zig-out/bin/zigist"]
