@@ -1,7 +1,7 @@
 name: 'zigist'
-description: 'Update gist with random dev joke'
+description: 'Update a gist with random dev joke'
 branding:
-  icon: book-open
+  icon: zap
   color: yellow
 inputs:
   gh-token:
