@@ -1,5 +1,5 @@
 name: 'zigist'
-description: 'Update a gist with random dev joke'
+description: 'Elevate your profile with a pinned gist of a random dev joke'
 branding:
   icon: zap
   color: yellow
